@@ -299,6 +299,20 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <div id="weekCards"></div>
     </div>
 
+    <!-- TIMELINE -->
+    <div class="page" id="page-timeline">
+      <div class="section-head"><h2>Resultados</h2><span class="mono">Qué esperar & cuándo</span></div>
+      <div style="margin:0 16px 12px;background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px 16px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">// La verdad sobre los plazos</div>
+        <div style="font-size:13px;color:var(--sub);line-height:1.65;">El ciclo de renovación celular masculino es de <strong style="color:var(--text)">28-40 días</strong>. Los cambios reales se ven en foto a partir de la <strong style="color:var(--text)">semana 6</strong>. Antes existe mejoría real, pero más táctil que visual.</div>
+      </div>
+      <div id="timelineCards"></div>
+      <div style="margin:0 16px 16px;background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">Frontera cosmética vs médica</div>
+        <div style="font-size:12px;color:var(--sub);line-height:1.6;">La cosmética puede mejorar la rojez un <strong style="color:var(--g)">50-60%</strong>, suavizar arrugas dinámicas un <strong style="color:var(--g)">20-30%</strong> y mejorar firmeza de forma progresiva. Para más: <strong style="color:var(--am)">Botox</strong> (arrugas estáticas), <strong style="color:var(--am)">IPL/láser</strong> (rosácea), <strong style="color:var(--am)">ácido hialurónico</strong> (ojeras estructurales).</div>
+      </div>
+    </div>
+
     <!-- INTRODUCCIÓN -->
     <div class="page" id="page-intro">
       <div class="section-head"><h2>Introducción</h2><span class="mono">Progresiva · por fases</span></div>
@@ -367,7 +381,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <button class="nav-btn active" onclick="goTo('home',this)"><span class="nav-icon">◉</span><span class="nav-label">Inicio</span></button>
     <button class="nav-btn" onclick="goTo('week',this)"><span class="nav-icon">▦</span><span class="nav-label">Semana</span></button>
     <button class="nav-btn" onclick="goTo('products',this)"><span class="nav-icon">◈</span><span class="nav-label">Productos</span></button>
-    <button class="nav-btn" onclick="goTo('intro',this)"><span class="nav-icon">⬡</span><span class="nav-label">Intro</span></button>
+    <button class="nav-btn" onclick="goTo('timeline',this)"><span class="nav-icon">📈</span><span class="nav-label">Progreso</span></button>
     <button class="nav-btn" onclick="goTo('fotos',this)"><span class="nav-icon">◻</span><span class="nav-label">Fotos</span></button>
   </nav>
 </div>
@@ -384,6 +398,140 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 // ═══════════════════════════════════════════════
 // DATA
 // ═══════════════════════════════════════════════
+// ═══════════════════════════════════════════════
+// BENEFICIOS POR PRODUCTO
+// ═══════════════════════════════════════════════
+const BENEFITS = {
+  'lrp-clean':  {icon:'💧', goal:'Limpiar sin agredir', what:'Elimina suciedad y exceso de sebo sin dañar la barrera lipídica. Sin sulfatos agresivos. Base de todo lo demás.', gets:'Piel limpia que no tira ni pica. Si tu piel está tirante tras lavarte, es que tu limpiador actual es demasiado agresivo. Este no lo será.'},
+  'cicaplast':  {icon:'🛡', goal:'Reparar la barrera', what:'Pantenol + Vitamina B5 + Madecassoside. Reconstruye la capa protectora de la piel dañada por el estrés y el afeitado.', gets:'En 1-2 semanas notarás menos rojez reactiva y menos tirantez. Es el producto más importante de toda la rutina para tu caso.'},
+  'cicalfate':  {icon:'🌿', goal:'Hidratar y calmar', what:'Zinc + cobre + manganeso. Sella la hidratación, calma la inflamación superficial y protege la barrera ya reparada.', gets:'Piel más suave al tacto y menos reactiva al afeitado. Acabado mate, sin brillo graso.'},
+  'spf':        {icon:'☀', goal:'Proteger del sol', what:'SPF 50+ con fotoliasas que reparan el ADN dañado. El sol de Madrid es el enemigo número 1 de la rosácea y el colágeno.', gets:'Sin esto, todo lo demás sirve de poco. El sol deshace de día lo que los activos construyen de noche. Acabado invisible, no mancha.'},
+  'spf-spray':  {icon:'🔄', goal:'Reaplicar SPF fácil', what:'SPF en spray para reaplicar encima del skincare o maquillaje sin rehacer la rutina. Para salidas de más de 2h.', gets:'Mantenimiento de la protección solar sin complicaciones. ALTERNATIVA GRATIS: aplica un poco más del Eryfotona con los dedos encima si llevas +2h fuera.'},
+  'vitc':       {icon:'✨', goal:'Luminosidad + antioxidante', what:'Vitamina C estabilizada. Neutraliza el daño oxidativo de la polución madrileña, reduce el eritema vascular y estimula la síntesis de colágeno.', gets:'En 4-6 semanas de uso constante: piel más luminosa, tono más uniforme, rojez de fondo más atenuada. Es acumulativa — los resultados llegan con constancia.'},
+  'micelar':    {icon:'🧹', goal:'Primera limpieza nocturna', what:'Micelas que capturan el SPF, la polución y el sebo del día sin frotar. Imprescindible para que los activos nocturnos penetren bien.', gets:'Sin este paso, el Crystal Retinal y la Niacinamida se aplican encima de una capa de SPF + suciedad. Eficacia de los activos: prácticamente cero.'},
+  'lrp-clean2': {icon:'💧', goal:'Segunda limpieza real', what:'Tras la micelar llega la limpieza real de la piel. La micelar retira el SPF; el limpiador llega a la piel desnuda.', gets:'Activos nocturnos que penetran de verdad. No saltar este paso aunque parezca redundante.'},
+  'niacin':     {icon:'🎯', goal:'Reducir rojez + regular sebo', what:'Niacinamida 10% + Zinc. Reduce el eritema crónico, normaliza la producción de sebo, refuerza la barrera y atenúa poros.', gets:'El activo con mejor ratio eficacia/precio de toda la rutina. En 4-6 semanas: rojez visiblemente reducida, poros más finos, piel más mate y uniforme.'},
+  'endocare':   {icon:'🔬', goal:'Péptidos + regeneración', what:'SCA (Secreto de Caracol) + EGF análogo + péptidos tensores. Estimula la producción de colágeno y elastina mientras duermes.', gets:'En 8-12 semanas: mejora visible de firmeza en mandíbula y mejillas, piel más densa. Es el anti-aging real de la rutina nocturna.'},
+  'caffeine':   {icon:'👁', goal:'Reducir ojeras vasculares', what:'Cafeína 5% vasoconstrictora. Reduce los capilares visibles bajo los ojos y la coloración azul-violácea característica de tu tipo de ojera.', gets:'Efecto inmediato suave (vasoconstrición) y efecto acumulativo en 4-6 semanas. Guardar en nevera potencia el efecto.'},
+  'retinal':    {icon:'⚡', goal:'Renovación celular + antiarrugas', what:'Retinaldehído 0.01% — 11 veces más potente que el retinol pero más tolerable. Acelera el recambio celular, estimula colágeno y suaviza arrugas.', gets:'El activo más potente de toda la rutina. En 8-12 semanas: arrugas frontales más suaves, textura más fina, piel más firme. Requiere paciencia — los primeros 15 días puede haber descamación leve (es normal).'},
+};
+
+// ═══════════════════════════════════════════════
+// TIMELINE DE RESULTADOS
+// ═══════════════════════════════════════════════
+const TIMELINE = [
+  {
+    week: '1–2', label: 'Primeros cambios',
+    color: 'var(--g)', dim: 'var(--g2)',
+    unit: 'semanas',
+    changes: [
+      {area:'Hidratación', desc:'Piel menos tirante tras lavarte. Sensación más cómoda al tacto.', icon:'💧'},
+      {area:'Barrera', desc:'Rojez reactiva (la del estrés agudo) empieza a ceder.', icon:'🛡'},
+      {area:'Limpieza', desc:'Poros menos congestionados al tercer día de doble limpieza.', icon:'✓'},
+    ],
+    honest: 'Aún no verás cambios en el espejo. Lo que mejora es la sensación táctil y el confort. Es normal y es señal de que la barrera se está reparando.',
+  },
+  {
+    week: '3–4', label: 'Textura & primeros activos',
+    color: 'var(--am)', dim: 'var(--am2)',
+    unit: 'semanas',
+    changes: [
+      {area:'Textura', desc:'Piel más uniforme. Poros visiblemente más finos con Niacinamida activa.', icon:'✨'},
+      {area:'Rojez', desc:'Primera reducción del eritema de fondo. Sutil pero medible en foto.', icon:'🎯'},
+      {area:'Sebo', desc:'Zona T más equilibrada, menos brillos a mediodía.', icon:'🌿'},
+    ],
+    honest: 'Semana 3-4 es cuando la gente del entorno empieza a notar algo diferente aunque no sepan qué. Leve pero real.',
+  },
+  {
+    week: '5–6', label: 'Luminosidad visible',
+    color: '#FB923C', dim: 'rgba(251,146,60,0.15)',
+    unit: 'semanas',
+    changes: [
+      {area:'Luminosidad', desc:'Vitamina C activa — tono más uniforme y aspecto más descansado.', icon:'☀'},
+      {area:'Rojez', desc:'Reducción del 30-40% del eritema crónico con constancia diaria.', icon:'📉'},
+      {area:'Hidratación', desc:'Piel más "llena" al tacto — primer efecto de turgencia real.', icon:'💧'},
+    ],
+    honest: 'Aquí las fotos antes/después empiezan a mostrar diferencia objetiva. Es el mejor momento para hacer una foto de referencia.',
+  },
+  {
+    week: '7–8', label: 'Antiarrugas + firmeza inicial',
+    color: 'var(--pm)', dim: 'var(--pm2)',
+    unit: 'semanas',
+    changes: [
+      {area:'Arrugas', desc:'Líneas dinámicas de frente más suaves. Retinal generando colágeno nuevo.', icon:'⚡'},
+      {area:'Ojeras', desc:'Cafeína activa — coloración violácea del surco nasoyugal más atenuada.', icon:'👁'},
+      {area:'Firmeza', desc:'Mandíbula con algo más de definición vs semana 1. Péptidos actuando.', icon:'🔬'},
+    ],
+    honest: 'El entorno cercano empieza a notarlo aunque tú no lo veas tanto en el espejo. Efecto "pareces más descansado" frecuente.',
+  },
+  {
+    week: '9–10', label: 'Renovación celular completa',
+    color: '#A78BFA', dim: 'rgba(167,139,250,0.15)',
+    unit: 'semanas',
+    changes: [
+      {area:'Textura', desc:'Piel notablemente más fina y suave. Poros en mínimos históricos.', icon:'✨'},
+      {area:'Arrugas', desc:'Arrugas estáticas de frente hasta 20-30% más suaves vs semana 1.', icon:'⚡'},
+      {area:'Tono', desc:'Hiperpigmentación residual reducida. Tono global más homogéneo.', icon:'🎯'},
+    ],
+    honest: 'Si llevas 9 semanas sin fallar, los resultados son objetivos y medibles. Es el punto donde la mayoría de hombres decide que el skincare funciona de verdad.',
+  },
+  {
+    week: '11–12', label: 'Evaluación 3 meses',
+    color: 'var(--g)', dim: 'var(--g2)',
+    unit: 'semanas',
+    changes: [
+      {area:'Rojez', desc:'Reducción del 50-60% del eritema. Si persiste más del 40%, valorar dermatólogo.', icon:'🛡'},
+      {area:'Firmeza', desc:'Colágeno nuevo visible. Mandíbula más definida. Piel notablemente más densa.', icon:'🔬'},
+      {area:'Global', desc:'Aspecto general 3-5 años más joven comparado con semana 1.', icon:'⭐'},
+    ],
+    honest: 'Primer hito real. Compara la foto de semana 1 con la de hoy. Si la rojez persiste considera añadir consulta dermatológica para confirmar rosácea.',
+  },
+  {
+    week: '4–5', label: 'Consolidación — 4 meses',
+    color: '#F472B6', dim: 'rgba(244,114,182,0.15)',
+    unit: 'meses',
+    changes: [
+      {area:'Colágeno', desc:'Producción de colágeno claramente acelerada. Piel más densa y resistente.', icon:'🔬'},
+      {area:'Retinal', desc:'Tolerancia establecida al Crystal Retinal. Puedes escalar a Crystal Retinal 3.', icon:'⚡'},
+      {area:'Arrugas', desc:'Líneas de expresión finas prácticamente desaparecidas. Profundas: 30-40% menos.', icon:'✨'},
+    ],
+    honest: 'A los 4 meses el retinal lleva el tiempo suficiente para mostrar su potencial real en la renovación celular. Es el mejor momento para escalar la concentración.',
+  },
+  {
+    week: '5–6', label: 'Resultado estructural — 5 meses',
+    color: '#34D399', dim: 'rgba(52,211,153,0.15)',
+    unit: 'meses',
+    changes: [
+      {area:'Firmeza', desc:'Mejora estructural real del óvalo facial. El lifting cosmético en su máximo.', icon:'🔬'},
+      {area:'Ojeras', desc:'Ojeras vasculares muy atenuadas. Si persisten en exceso: ácido hialurónico inyectable.', icon:'👁'},
+      {area:'Tono', desc:'Piel homogénea, luminosa y sin los picos de rojez que tenías al inicio.', icon:'🎯'},
+    ],
+    honest: 'Aquí muchos hombres empiezan a recibir comentarios de "qué bien te ves últimamente" sin saber a qué atribuirlo. Es el resultado acumulativo de 5 meses de constancia.',
+  },
+  {
+    week: '7–9', label: 'Madurez del protocolo — 8 meses',
+    color: '#F59E0B', dim: 'rgba(245,158,11,0.15)',
+    unit: 'meses',
+    changes: [
+      {area:'Protocolo', desc:'La rutina es automática y no cuesta esfuerzo. 20 min/día integrados.', icon:'✓'},
+      {area:'Piel', desc:'Piel en su mejor estado histórico. Barrera robusta, tono uniforme.', icon:'⭐'},
+      {area:'Retinal', desc:'Crystal Retinal 3 como mantenimiento. Considerar Crystal Retinal 6 si piel lo permite.', icon:'⚡'},
+    ],
+    honest: 'La piel masculina tarda 6-9 meses en mostrar su potencial real con retinoides. Si has llegado aquí sin fallar, los cambios son permanentes mientras mantengas la rutina.',
+  },
+  {
+    week: '10–12', label: 'Año completo — resultados máximos',
+    color: '#818CF8', dim: 'rgba(129,140,248,0.15)',
+    unit: 'meses',
+    changes: [
+      {area:'Anti-aging', desc:'Piel con 4-7 años menos de aspecto vs punto de partida documentado en fotos.', icon:'⭐'},
+      {area:'Colágeno', desc:'Densidad de colágeno significativamente recuperada. Piel más firme que a los 34.', icon:'🔬'},
+      {area:'Mantenimiento', desc:'Momento de ajustar el protocolo: escalar retinal o valorar tratamientos médicos estéticos.', icon:'🎯'},
+    ],
+    honest: 'Un año de rutina constante equivale aproximadamente a los resultados de 2-3 sesiones de Profhilo o una ronda de Botox preventivo — a una fracción del coste. La constancia gana a los procedimientos puntuales.',
+  },
+];
+
 const PRODUCTS = [
   // AM — phase 1 (base desde día 1)
   {id:'lrp-clean',name:'Toleriane Gentle Cleanser',brand:'La Roche-Posay',price:'~15€',session:'am',amount:'1 bomba (~3ml)',wait:'30 seg',how:'Piel húmeda, círculos 30s, aclarar con agua fría, secar a toquecitos sin frotar.',link:'https://www.amazon.es/s?k=La+Roche-Posay+Toleriane+Hydrating+Gentle+Cleanser',linkLabel:'Amazon ES',duration:'~2 meses',step:1,phase:1},
@@ -393,7 +541,7 @@ const PRODUCTS = [
   // AM — phase 3 (semanas 5-6)
   {id:'vitc',name:'Ascorbyl Glucoside 12%',brand:'The Ordinary',price:'~12€',session:'am',amount:'3 gotas',wait:'2 min',how:'DÍAS ALTERNOS únicamente (L·M·V). 3 gotas en frente, mejillas, mentón. Aplicar después del Cicaplast y antes de la crema.',link:'https://www.amazon.es/s?k=the+ordinary+ascorbyl+glucoside',linkLabel:'Amazon ES',duration:'~4 meses',step:3,phase:3,note:'Días alternos (L·M·V)'},
   // AM — reaplicación SPF mediodía
-  {id:'spf-spray',name:'Fusion Air SPF 50+ (reaplicación)',brand:'ISDIN',price:'~22€',session:'am',amount:'2–3 pulsaciones',wait:'Instantáneo',how:'Agita el bote. Spray a 20cm de distancia. Apto encima del skincare y sin manchar ropa. Usar si llevas más de 2h en exterior madrileño.',link:'https://www.amazon.es/s?k=isdin+fusion+air+spf+50',linkLabel:'Amazon ES',duration:'~2 meses',step:5,phase:1,note:'Solo si llevas +2h fuera',restock:true},
+  {id:'spf-spray',name:'Fusion Air SPF 50+ (reaplicación)',brand:'ISDIN',price:'~22€',session:'am',amount:'2–3 pulsaciones',wait:'Instantáneo',how:'Agita el bote. Spray a 20cm de distancia. Apto encima del skincare y sin manchar ropa. Usar si llevas más de 2h en exterior madrileño. ALTERNATIVA sin gastar: aplica un poco más del Eryfotona con los dedos encima.',link:'https://www.amazon.es/s?k=isdin+fusion+air+spf+50',linkLabel:'Amazon ES',duration:'~2 meses',step:5,phase:1,note:'Opcional — ver alternativa',optional:true,restock:true},
   // PM — phase 2 (semanas 3-4)
   {id:'micelar',name:'Sensibio H2O',brand:'Bioderma',price:'~12€',session:'pm',amount:'2–3 discos',wait:'Inmediato',how:'Disco bien empapado. Pasa sin frotar, hasta que el algodón salga limpio. No aclarar. Retira el SPF del día.',link:'https://www.primor.eu/buscar?search=bioderma+sensibio',linkLabel:'Primor',duration:'~2 meses',step:1,phase:2},
   {id:'lrp-clean2',name:'Toleriane Cleanser (2ª limpieza)',brand:'La Roche-Posay',price:'—',session:'pm',amount:'1 bomba',wait:'30 seg — seca bien',how:'Segunda limpieza que llega a la piel real. Imprescindible que la piel quede COMPLETAMENTE SECA antes de aplicar activos nocturnos.',link:'https://www.amazon.es/s?k=La+Roche-Posay+Toleriane+Hydrating+Gentle+Cleanser',linkLabel:'Amazon ES (mismo bote AM)',duration:'compartido',step:2,phase:2},
@@ -561,6 +709,7 @@ function goTo(page, btn){
   if(page==='products') renderProducts();
   if(page==='semanas') renderSemanas();
   if(page==='intro') renderIntro();
+  if(page==='timeline') renderTimeline();
   if(page==='fotos') renderFotos();
 }
 
@@ -695,6 +844,13 @@ function renderTodaySteps(am){
           <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;padding:3px 10px;border-radius:20px;background:var(--s3);color:var(--sub);border:1px solid var(--border);">⏱ ${p.wait}</span>
         </div>
         <div style="font-size:12px;color:var(--sub);line-height:1.6;margin-bottom:10px;padding:9px 11px;background:var(--s1);border-radius:8px;border-left:3px solid var(--am);">${p.how}</div>
+        ${(()=>{const b=BENEFITS[p.id];return b?`<div style="margin-bottom:10px;padding:9px 11px;background:var(--s1);border-radius:8px;border-left:3px solid var(--g);">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--g);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">${b.icon} Para qué sirve</div>
+          <div style="font-size:12px;color:var(--sub);line-height:1.55;margin-bottom:6px;">${b.what}</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--am);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Qué conseguirás</div>
+          <div style="font-size:12px;color:var(--sub);line-height:1.55;">${b.gets}</div>
+        </div>`:''})()}
+        ${p.optional?`<div style="font-size:11px;color:var(--am);font-family:'IBM Plex Mono',monospace;margin-bottom:8px;padding:7px 10px;background:var(--am2);border-radius:7px;border:1px solid rgba(245,158,11,0.2);">💡 Opcional por ahora: reaplicar el Eryfotona con los dedos si llevas +2h fuera vale perfectamente.</div>`:''}
         <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">DÓNDE COMPRAR</div>
         <a href="${p.link}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--pm);text-decoration:none;padding:6px 12px;background:var(--pm2);border:1px solid rgba(129,140,248,0.2);border-radius:8px;" onclick="event.stopPropagation()">→ ${p.linkLabel} · ${p.price}</a>
       </div>
@@ -918,7 +1074,14 @@ function renderProducts(){
           <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;padding:3px 10px;border-radius:20px;background:var(--s3);color:var(--sub);border:1px solid var(--border);">⏱ ${p.wait}</span>
           ${noteHtml}
         </div>
-        <div style="font-size:13px;color:var(--sub);line-height:1.65;margin-bottom:12px;padding:10px 12px;background:var(--s1);border-radius:8px;border-left:3px solid var(--am);">${p.how}</div>
+        <div style="font-size:13px;color:var(--sub);line-height:1.65;margin-bottom:10px;padding:10px 12px;background:var(--s1);border-radius:8px;border-left:3px solid var(--am);">${p.how}</div>
+        ${(()=>{const b=BENEFITS[p.id];return b?`<div style="margin-bottom:10px;padding:10px 12px;background:var(--s1);border-radius:8px;border-left:3px solid var(--g);">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--g);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:5px;">${b.icon} Para qué sirve · ${b.goal}</div>
+          <div style="font-size:12px;color:var(--sub);line-height:1.55;margin-bottom:8px;">${b.what}</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--am);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Lo que conseguirás en tu piel</div>
+          <div style="font-size:12px;color:var(--sub);line-height:1.55;">${b.gets}</div>
+        </div>`:''})()}
+        ${p.optional?`<div style="font-size:11px;color:var(--am);font-family:'IBM Plex Mono',monospace;margin-bottom:10px;padding:8px 10px;background:var(--am2);border-radius:7px;border:1px solid rgba(245,158,11,0.2);">💡 Opcional: si no puedes comprarlo ahora, aplica un poco más del Eryfotona con los dedos si llevas +2h fuera.</div>`:''}
         <a href="${p.link}" target="_blank" class="prod-link" onclick="event.stopPropagation()">→ Comprar en ${p.linkLabel}</a>
       </div>
     `;
@@ -1225,6 +1388,79 @@ function updateHomeIntroCard(currentW){
   el.textContent=(isNow?'Ahora: ':'Siguiente: ')+next.label;
   el.style.color=next.color;
   el2.textContent='Fase '+next.phase+' · Semanas '+next.weeks+' · '+fmt(phaseStart)+' →';
+}
+
+// ═══════════════════════════════════════════════
+// TIMELINE DE RESULTADOS
+// ═══════════════════════════════════════════════
+function renderTimeline(){
+  const container=document.getElementById('timelineCards');
+  if(!container) return;
+  container.innerHTML='';
+  const currentW=getCurrentWeek();
+
+  // Divider before months section
+  let monthsDividerAdded=false;
+
+  TIMELINE.forEach(t=>{
+    const isMonths=t.unit==='meses';
+    const weekNum=parseInt(t.week.split('–')[0]);
+    // For weeks: compare against currentW; for months: convert
+    const currentMonth=Math.floor(currentW/4.3);
+    const isPast=isMonths?(currentMonth>weekNum+1):(currentW>weekNum+1);
+    const isCurrent=isMonths?(currentMonth>=weekNum&&currentMonth<=weekNum+1):(currentW>=weekNum&&currentW<=weekNum+1);
+
+    if(isMonths&&!monthsDividerAdded){
+      monthsDividerAdded=true;
+      const div=document.createElement('div');
+      div.style.cssText='display:flex;align-items:center;gap:10px;margin:4px 16px 14px;';
+      div.innerHTML=`<div style="flex:1;height:1px;background:var(--border);"></div><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.12em;white-space:nowrap;">Largo plazo — meses</span><div style="flex:1;height:1px;background:var(--border);"></div>`;
+      container.appendChild(div);
+    }
+
+    const card=document.createElement('div');
+    card.style.cssText='margin:0 16px 12px;border-radius:14px;overflow:hidden;border:1px solid '+(isCurrent?t.color.replace('var(--','rgba(').replace(')',',0.4)'):'var(--border)')+';background:var(--s1);';
+
+    const statusIcon=isPast?'✓':isCurrent?'→':'○';
+    const statusColor=isPast?'var(--g)':isCurrent?t.color:'var(--muted)';
+
+    card.innerHTML=`
+      <div style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;background:${isCurrent?'rgba(0,0,0,0.3)':'transparent'};" onclick="toggleTimelineCard('tc${weekNum}','ta${weekNum}')">
+        <div style="width:38px;height:38px;border-radius:10px;background:${isCurrent?t.dim:isPast?'var(--g2)':'var(--s3)'};display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:${statusColor};flex-shrink:0;border:1px solid ${isCurrent?t.color:isPast?'rgba(52,211,153,0.3)':'var(--border)'};">${statusIcon}</div>
+        <div style="flex:1;">
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;">${t.unit==='meses'?'Mes':'Semana'} ${t.week}</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:${statusColor};margin-top:2px;">${t.label}</div>
+        </div>
+        ${isCurrent?`<span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:${t.color};padding:3px 8px;border-radius:20px;background:${t.dim};border:1px solid ${t.color.replace('var(--','rgba(').replace(')',',0.3)')};">AHORA</span>`:''}
+        <span id="ta${weekNum}" style="font-size:16px;color:var(--muted);display:inline-block;transition:transform 0.2s;">›</span>
+      </div>
+      <div id="tc${weekNum}" style="display:${isCurrent?'block':'none'};padding:0 16px 16px;">
+        ${t.changes.map(c=>`
+          <div style="display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
+            <div style="width:28px;height:28px;border-radius:7px;background:${t.dim};display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">${c.icon}</div>
+            <div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:${t.color};text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;">${c.area}</div>
+              <div style="font-size:13px;color:var(--sub);line-height:1.5;">${c.desc}</div>
+            </div>
+          </div>
+        `).join('')}
+        <div style="margin-top:12px;padding:10px 12px;background:var(--s2);border-radius:8px;border-left:3px solid var(--muted);">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Sinceridad</div>
+          <div style="font-size:12px;color:var(--sub);line-height:1.55;font-style:italic;">${t.honest}</div>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function toggleTimelineCard(bodyId, arrId){
+  const body=document.getElementById(bodyId);
+  const arr=document.getElementById(arrId);
+  if(!body) return;
+  const open=body.style.display==='block';
+  body.style.display=open?'none':'block';
+  if(arr) arr.style.transform=open?'':'rotate(90deg)';
 }
 
 // ═══════════════════════════════════════════════
