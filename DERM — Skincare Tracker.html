@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>DERM — Skincare Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0A0A0A;--s1:#111111;--s2:#1A1A1A;--s3:#222222;--border:#2C2C2C;
+  --text:#F0EDE8;--sub:#8A8480;--muted:#4A4845;
+  --am:#F59E0B;--am2:rgba(245,158,11,0.15);--am3:rgba(245,158,11,0.06);
+  --pm:#818CF8;--pm2:rgba(129,140,248,0.15);--pm3:rgba(129,140,248,0.06);
+  --g:#34D399;--g2:rgba(52,211,153,0.15);--g3:rgba(52,211,153,0.06);
+  --r:#F87171;--r2:rgba(248,113,113,0.15);
+  --nav:56px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;}
+
+/* ── LAYOUT ── */
+#app{display:flex;flex-direction:column;height:100%;max-width:430px;margin:0 auto;position:relative;}
+#screen{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(var(--nav)+16px);}
+#screen::-webkit-scrollbar{width:3px;}
+#screen::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* ── NAV ── */
+#nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:var(--nav);background:rgba(10,10,10,0.95);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;z-index:100;padding:0 8px;}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 12px;border:none;background:none;cursor:pointer;border-radius:10px;transition:all 0.2s;min-width:52px;}
+.nav-btn .nav-icon{font-size:18px;transition:transform 0.2s;}
+.nav-btn .nav-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);transition:color 0.2s;}
+.nav-btn.active .nav-label{color:var(--text);}
+.nav-btn.active .nav-icon{transform:scale(1.1);}
+
+/* ── PAGES ── */
+.page{display:none;animation:pageIn 0.25s ease;}
+.page.active{display:block;}
+@keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── COMMON ── */
+.section-head{padding:20px 20px 12px;display:flex;align-items:baseline;gap:10px;}
+.section-head h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;letter-spacing:-0.02em;}
+.section-head .mono{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub);letter-spacing:0.1em;text-transform:uppercase;}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:14px;margin:0 16px 12px;}
+.card-pad{padding:16px;}
+
+/* ── HOME ── */
+.home-hero{padding:24px 20px 16px;}
+.time-indicator{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;}
+.time-am{background:var(--am2);color:var(--am);border:1px solid rgba(245,158,11,0.3);}
+.time-pm{background:var(--pm2);color:var(--pm);border:1px solid rgba(129,140,248,0.3);}
+.home-title{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;letter-spacing:-0.03em;line-height:1.1;margin-bottom:4px;}
+.home-subtitle{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--sub);}
+
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:0 16px 14px;}
+.stat-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px 12px;}
+.stat-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;}
+.stat-lbl{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--sub);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;}
+
+.week-progress{margin:0 16px 14px;}
+.wp-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.wp-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub);letter-spacing:0.1em;text-transform:uppercase;}
+.wp-pct{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--g);}
+.progress-bar{height:4px;background:var(--s3);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:2px;transition:width 0.6s ease;background:linear-gradient(90deg,var(--g),#6EE7B7);}
+
+.today-card{margin:0 16px 14px;background:var(--s1);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.today-header{padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.today-header-left{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;}
+.today-header-right{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub);}
+.routine-step{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.15s;}
+.routine-step:last-child{border-bottom:none;}
+.routine-step:active{background:var(--s2);}
+.step-check{width:28px;height:28px;border-radius:8px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;font-size:13px;}
+.step-check.done{background:var(--g);border-color:var(--g);color:#000;}
+.step-check.done-am{background:var(--am);border-color:var(--am);color:#000;}
+.step-check.done-pm{background:var(--pm);border-color:var(--pm);color:#fff;}
+.step-info-home{flex:1;min-width:0;}
+.step-name{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.step-detail{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub);margin-top:1px;}
+.step-badge{font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 7px;border-radius:20px;flex-shrink:0;}
+.badge-am{background:var(--am2);color:var(--am);}
+.badge-pm{background:var(--pm2);color:var(--pm);}
+.badge-wait{font-size:10px;color:var(--muted);}
+
+/* streak & restock */
+.mini-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 14px;}
+.mini-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px;}
+.mini-card-title{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--sub);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;}
+.mini-card-val{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;}
+.mini-card-sub{font-size:11px;color:var(--sub);margin-top:2px;}
+
+/* fast track */
+.fast-track-btn{margin:0 16px 14px;background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background 0.15s;}
+.fast-track-btn:active{background:var(--s3);}
+.ft-left{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
+.ft-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub);margin-top:2px;}
+.ft-arrow{font-size:18px;color:var(--sub);}
+
+/* ── WEEK TAB ── */
+.days-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:0 16px 16px;}
+.day-dot{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;}
+.day-circle{width:36px;height:36px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;transition:all 0.2s;position:relative;}
+.day-circle.today{border-color:var(--am);}
+.day-circle.complete{background:var(--g);border-color:var(--g);color:#000;}
+.day-circle.partial{background:var(--am2);border-color:var(--am);}
+.day-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--sub);text-transform:uppercase;}
+.day-detail{margin:0 16px;}
+.day-session{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;}
+.ds-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.ds-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
+.ds-time{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub);}
+.ds-step{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;}
+.ds-step:last-child{border-bottom:none;}
+.ds-check{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;transition:all 0.2s;}
+.ds-check.ok-am{background:var(--am);border-color:var(--am);color:#000;}
+.ds-check.ok-pm{background:var(--pm);border-color:var(--pm);color:#fff;}
+.ds-name{font-size:13px;flex:1;}
+.ds-wait{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);}
+
+/* ── PRODUCTS TAB ── */
+.product-item{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.15s;}
+.product-item:last-child{border-bottom:none;}
+.product-item:active{background:var(--s2);}
+.prod-check{width:26px;height:26px;border-radius:7px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;transition:all 0.2s;}
+.prod-check.owned{background:var(--g);border-color:var(--g);color:#000;}
+.prod-info{flex:1;min-width:0;}
+.prod-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.prod-brand{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub);margin-top:1px;}
+.prod-price{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--am);flex-shrink:0;}
+.prod-link{display:inline-flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--pm);text-decoration:none;margin-top:4px;}
+.prod-link:hover{text-decoration:underline;}
+.prod-expanded{padding:0 16px 14px 54px;border-bottom:1px solid var(--border);background:var(--s2);}
+.prod-expanded p{font-size:12px;color:var(--sub);line-height:1.5;margin-bottom:8px;}
+.restock-warn{display:inline-flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--r);padding:3px 8px;background:var(--r2);border-radius:20px;cursor:pointer;border:none;margin-top:4px;}
+
+/* ── SEMANAS TAB ── */
+.week-card{margin:0 16px 12px;background:var(--s1);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.wc-header{padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;}
+.wc-num{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;flex-shrink:0;}
+.wc-num.locked{background:var(--s3);color:var(--muted);}
+.wc-num.active-w{background:var(--am2);color:var(--am);border:1px solid rgba(245,158,11,0.3);}
+.wc-num.complete-w{background:var(--g2);color:var(--g);border:1px solid rgba(52,211,153,0.3);}
+.wc-info{flex:1;}
+.wc-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
+.wc-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub);margin-top:2px;}
+.wc-badge{font-family:'IBM Plex Mono',monospace;font-size:9px;padding:3px 8px;border-radius:20px;flex-shrink:0;}
+.wc-body{padding:0 16px 16px;display:none;}
+.wc-body.open{display:block;}
+.wc-goal{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--sub);}
+.wc-goal:last-child{border-bottom:none;}
+.wc-goal-check{width:20px;height:20px;border-radius:5px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;margin-top:2px;cursor:pointer;transition:all 0.2s;}
+.wc-goal-check.done{background:var(--g);border-color:var(--g);color:#000;}
+.complete-btn{width:100%;margin-top:12px;padding:11px;background:var(--g2);border:1px solid rgba(52,211,153,0.3);border-radius:10px;color:var(--g);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;}
+.complete-btn:active{background:var(--g);color:#000;}
+.achievement-card{margin:0 16px 10px;background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;}
+.ach-icon{font-size:24px;flex-shrink:0;}
+.ach-info{}
+.ach-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;}
+.ach-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub);margin-top:2px;}
+.ach-locked{opacity:0.35;}
+
+/* ── FOTOS TAB ── */
+.photo-upload-area{margin:0 16px 14px;background:var(--s1);border:2px dashed var(--border);border-radius:14px;padding:32px 20px;text-align:center;cursor:pointer;transition:border-color 0.2s;}
+.photo-upload-area:hover{border-color:var(--pm);}
+.upload-icon{font-size:32px;margin-bottom:8px;}
+.upload-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:4px;}
+.upload-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub);}
+#fileInput{display:none;}
+.photo-entry{margin:0 16px 12px;background:var(--s1);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.pe-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.pe-week{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--am);text-transform:uppercase;letter-spacing:0.1em;}
+.pe-date{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub);}
+.pe-imgs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;}
+.pe-img{aspect-ratio:1;object-fit:cover;border-radius:8px;width:100%;}
+.pe-compare{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;}
+.pe-compare img{aspect-ratio:3/4;object-fit:cover;border-radius:8px;width:100%;}
+.pe-report{padding:14px 16px;}
+.pe-report-title{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;}
+.pe-report-text{font-size:13px;color:var(--sub);line-height:1.6;}
+.ai-analyzing{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--pm);}
+.spinner{width:14px;height:14px;border:2px solid var(--pm2);border-top-color:var(--pm);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.compare-btn{width:calc(100% - 32px);margin:0 16px 14px;padding:12px;background:var(--pm2);border:1px solid rgba(129,140,248,0.3);border-radius:10px;color:var(--pm);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+.compare-view{margin:0 16px 14px;background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:16px;}
+.compare-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:12px;}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.compare-slot{border-radius:10px;overflow:hidden;background:var(--s3);aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:10px;}
+.compare-slot img{width:100%;height:100%;object-fit:cover;}
+.compare-labels{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.c-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub);text-align:center;}
+
+/* ── TOAST ── */
+#toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:10px 18px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text);z-index:999;transition:transform 0.3s ease;white-space:nowrap;pointer-events:none;}
+#toast.show{transform:translateX(-50%) translateY(0);}
+
+/* ── MODAL ── */
+#modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;display:none;align-items:flex-end;justify-content:center;}
+#modal-overlay.open{display:flex;}
+#modal{background:var(--s1);border-radius:20px 20px 0 0;width:100%;max-width:430px;max-height:80vh;overflow-y:auto;padding:24px 20px 40px;animation:slideUp 0.3s ease;}
+@keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px;}
+.modal-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:16px;}
+.modal-close{position:absolute;top:16px;right:20px;background:none;border:none;color:var(--sub);font-size:20px;cursor:pointer;}
+
+/* misc */
+.empty-state{text-align:center;padding:48px 20px;color:var(--sub);font-family:'IBM Plex Mono',monospace;font-size:12px;}
+.tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:0.08em;}
+.tag-am{background:var(--am2);color:var(--am);}
+.tag-pm{background:var(--pm2);color:var(--pm);}
+.tag-both{background:var(--g2);color:var(--g);}
+.divider{height:1px;background:var(--border);margin:0 16px 14px;}
+.section-label{padding:16px 20px 8px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub);letter-spacing:0.12em;text-transform:uppercase;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="screen">
+    <!-- HOME -->
+    <div class="page active" id="page-home">
+      <div class="home-hero">
+        <div class="time-indicator" id="timeIndicator">☀ Turno mañana</div>
+        <div class="home-title" id="homeTitle">Buenos días</div>
+        <div class="home-subtitle" id="homeSubtitle">Rutina AM pendiente</div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-val" id="statStreak" style="color:var(--am)">0</div><div class="stat-lbl">Racha días</div></div>
+        <div class="stat-card"><div class="stat-val" id="statWeek" style="color:var(--pm)">S1</div><div class="stat-lbl">Semana</div></div>
+        <div class="stat-card"><div class="stat-val" id="statDone" style="color:var(--g)">0%</div><div class="stat-lbl">Hoy</div></div>
+      </div>
+
+      <div class="week-progress">
+        <div class="wp-header"><span class="wp-label">Progreso semana</span><span class="wp-pct" id="weekPct">0%</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="weekBar" style="width:0%"></div></div>
+      </div>
+
+      <div class="today-card">
+        <div class="today-header">
+          <div class="today-header-left" id="todayHeaderTitle">Rutina de hoy</div>
+          <div class="today-header-right" id="todayDate"></div>
+        </div>
+        <div style="display:flex;border-bottom:1px solid var(--border);">
+          <button id="tabAM" onclick="switchTab('am')" style="flex:1;padding:10px;background:none;border:none;border-bottom:2px solid var(--am);color:var(--am);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;">☀ Mañana</button>
+          <button id="tabPM" onclick="switchTab('pm')" style="flex:1;padding:10px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;">🌙 Noche</button>
+        </div>
+        <div id="todaySteps"></div>
+      </div>
+
+      <div class="mini-cards">
+        <div class="mini-card">
+          <div class="mini-card-title">Racha actual</div>
+          <div class="mini-card-val" id="streakDisplay" style="color:var(--am)">0 días</div>
+          <div class="mini-card-sub">consecutivos</div>
+        </div>
+        <div class="mini-card">
+          <div class="mini-card-title">Restock urgente</div>
+          <div class="mini-card-val" id="restockCount" style="color:var(--r)">—</div>
+          <div class="mini-card-sub" id="restockSub">sin alertas</div>
+        </div>
+      </div>
+
+      <div class="fast-track-btn" onclick="openFastTrack()">
+        <div><div class="ft-left">⚡ Fast Track</div><div class="ft-sub">Marcar todo de golpe</div></div>
+        <div class="ft-arrow">›</div>
+      </div>
+
+      <div style="margin:0 16px 14px;background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:16px;" onclick="goTo('intro',document.querySelectorAll('.nav-btn')[3])" id="homeIntroCard">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">Introducción progresiva</div>
+        <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:4px;" id="homeNextProduct">Próximo producto: —</div>
+        <div style="font-size:12px;color:var(--sub);" id="homeNextDate">Abre para ver el calendario completo →</div>
+      </div>
+    </div>
+
+    <!-- WEEK -->
+    <div class="page" id="page-week">
+      <div class="section-head"><h2>Semana</h2><span class="mono" id="weekRangeLabel"></span></div>
+      <div class="days-grid" id="daysGrid"></div>
+      <div class="day-detail" id="dayDetail"></div>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div class="page" id="page-products">
+      <div class="section-head"><h2>Productos</h2><span class="mono" id="prodCount"></span></div>
+      <div class="section-label">☀ Mañana</div>
+      <div class="card" id="prodListAM"></div>
+      <div class="section-label">🌙 Noche</div>
+      <div class="card" id="prodListPM"></div>
+    </div>
+
+    <!-- SEMANAS -->
+    <div class="page" id="page-semanas">
+      <div class="section-head"><h2>Protocolo</h2><span class="mono">12 semanas</span></div>
+      <div class="section-label">Logros</div>
+      <div id="achievements"></div>
+      <div class="section-label">Semanas</div>
+      <div id="weekCards"></div>
+    </div>
+
+    <!-- INTRODUCCIÓN -->
+    <div class="page" id="page-intro">
+      <div class="section-head"><h2>Introducción</h2><span class="mono">Progresiva · por fases</span></div>
+
+      <!-- EXPLICACIÓN CLAVE -->
+      <div style="margin:0 16px 12px;background:var(--s1);border:1px solid var(--border);border-radius:14px;overflow:hidden;">
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--g);flex-shrink:0;"></div>
+          <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;">¿Por qué no uno a uno desde el principio?</div>
+        </div>
+        <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:flex-start;gap:10px;">
+            <div style="width:24px;height:24px;border-radius:6px;background:var(--g2);border:1px solid rgba(52,211,153,0.3);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px;">☀</div>
+            <div style="font-size:13px;color:var(--sub);line-height:1.6;"><strong style="color:var(--g)">Mañana — todos desde el día 1.</strong> Limpiador, Cicaplast, crema hidratante y SPF son productos base sin activos potentes. No irritan, no reaccionan entre sí. Los usas todos juntos desde el primer día.</div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;">
+            <div style="width:24px;height:24px;border-radius:6px;background:var(--pm2);border:1px solid rgba(129,140,248,0.3);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px;">🌙</div>
+            <div style="font-size:13px;color:var(--sub);line-height:1.6;"><strong style="color:var(--pm)">Noche — uno nuevo cada 2 semanas.</strong> Niacinamida, Vitamina C, Cafeína y Retinal son activos reales. Si introduces varios a la vez y hay reacción, no sabrás cuál la causa. Paciencia.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLA VISUAL -->
+      <div style="margin:0 16px 4px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub);letter-spacing:0.12em;text-transform:uppercase;">Mapa de productos</div>
+      <div style="margin:0 16px 14px;background:var(--s1);border:1px solid var(--border);border-radius:14px;overflow:hidden;">
+        <!-- Header -->
+        <div style="display:grid;grid-template-columns:1fr 80px 70px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--s2);">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">Producto</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;text-align:center;">Semana</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;text-align:center;">Tipo</div>
+        </div>
+        <!-- AM products -->
+        <div style="padding:8px 14px 4px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--am);letter-spacing:0.1em;text-transform:uppercase;">☀ Mañana</div>
+        <div id="prodTableAM"></div>
+        <!-- PM products -->
+        <div style="padding:8px 14px 4px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--pm);letter-spacing:0.1em;text-transform:uppercase;border-top:1px solid var(--border);">🌙 Noche</div>
+        <div id="prodTablePM"></div>
+      </div>
+
+      <!-- REACCIÓN WARNING -->
+      <div style="margin:0 16px 12px;background:var(--r2);border:1px solid rgba(248,113,113,0.2);border-radius:12px;padding:14px 16px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--r);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">⚠ Si hay reacción</div>
+        <div style="font-size:13px;color:var(--sub);line-height:1.6;">Vuelve a: Limpiador + Cicaplast + SPF durante <strong style="color:var(--text)">5 días</strong>. Luego reintroduce el activo a menor frecuencia. Si persiste, elimínalo y pasa al siguiente.</div>
+      </div>
+
+      <div class="section-label">Fases de desbloqueo</div>
+      <div id="introCards"></div>
+    </div>
+
+    <!-- FOTOS -->
+    <div class="page" id="page-fotos">
+      <div class="section-head"><h2>Seguimiento</h2><span class="mono">Fotos & análisis</span></div>
+      <div class="photo-upload-area" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-icon">📷</div>
+        <div class="upload-title">Añadir foto esta semana</div>
+        <div class="upload-sub">Frente · Perfil izq · Perfil der</div>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" multiple>
+      <div id="compareSection"></div>
+      <div id="photoEntries"></div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <nav id="nav">
+    <button class="nav-btn active" onclick="goTo('home',this)"><span class="nav-icon">◉</span><span class="nav-label">Inicio</span></button>
+    <button class="nav-btn" onclick="goTo('week',this)"><span class="nav-icon">▦</span><span class="nav-label">Semana</span></button>
+    <button class="nav-btn" onclick="goTo('products',this)"><span class="nav-icon">◈</span><span class="nav-label">Productos</span></button>
+    <button class="nav-btn" onclick="goTo('intro',this)"><span class="nav-icon">⬡</span><span class="nav-label">Intro</span></button>
+    <button class="nav-btn" onclick="goTo('fotos',this)"><span class="nav-icon">◻</span><span class="nav-label">Fotos</span></button>
+  </nav>
+</div>
+
+<div id="toast"></div>
+<div id="modal-overlay" onclick="closeModal(event)">
+  <div id="modal">
+    <div class="modal-handle"></div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════
+const PRODUCTS = [
+  // AM — phase 1 (base desde día 1)
+  {id:'lrp-clean',name:'Toleriane Gentle Cleanser',brand:'La Roche-Posay',price:'~15€',session:'am',amount:'1 bomba (~3ml)',wait:'30 seg',how:'Piel húmeda, círculos 30s, aclarar con agua fría, secar a toquecitos sin frotar.',link:'https://www.amazon.es/s?k=La+Roche-Posay+Toleriane+Hydrating+Gentle+Cleanser',linkLabel:'Amazon ES',duration:'~2 meses',step:1,phase:1},
+  {id:'cicaplast',name:'Cicaplast B5 Sérum',brand:'La Roche-Posay',price:'~20€',session:'am',amount:'3–4 gotas',wait:'1 min',how:'Sobre piel LIGERAMENTE HÚMEDA. Toquecitos en mejillas, frente, nariz. Sin frotar. La humedad residual potencia la absorción del ácido hialurónico.',link:'https://www.primor.eu/buscar?search=la+roche+posay+cicaplast',linkLabel:'Primor',duration:'~3 meses',step:2,phase:1},
+  {id:'cicalfate',name:'Cicalfate+ Crème',brand:'Avène',price:'~18€',session:'am',amount:'½ guisante (~0.5ml)',wait:'2 min',how:'Calienta entre los dedos 5 segundos. Aplica siempre con movimientos hacia ARRIBA. Cuello incluido. Nunca frotar hacia abajo.',link:'https://www.druni.es/search?q=avene+cicalfate',linkLabel:'Druni',duration:'~2 meses',step:3,phase:1},
+  {id:'spf',name:'Eryfotona Actinica SPF 50+',brand:'ISDIN',price:'~28€',session:'am',amount:'2 dedos = ~2ml',wait:'Último paso AM',how:'REGLA 2 DEDOS: llena el índice y corazón juntos. Aplica a toquecitos, nunca frotando. Último paso siempre. Sal de casa 5 min después. Reaplicar si llevas +2h en exterior.',link:'https://www.amazon.es/s?k=isdin+eryfotona+actinica+spf+50',linkLabel:'Amazon ES',duration:'~1 mes',step:4,phase:1,restock:true},
+  // AM — phase 3 (semanas 5-6)
+  {id:'vitc',name:'Ascorbyl Glucoside 12%',brand:'The Ordinary',price:'~12€',session:'am',amount:'3 gotas',wait:'2 min',how:'DÍAS ALTERNOS únicamente (L·M·V). 3 gotas en frente, mejillas, mentón. Aplicar después del Cicaplast y antes de la crema.',link:'https://www.amazon.es/s?k=the+ordinary+ascorbyl+glucoside',linkLabel:'Amazon ES',duration:'~4 meses',step:3,phase:3,note:'Días alternos (L·M·V)'},
+  // AM — reaplicación SPF mediodía
+  {id:'spf-spray',name:'Fusion Air SPF 50+ (reaplicación)',brand:'ISDIN',price:'~22€',session:'am',amount:'2–3 pulsaciones',wait:'Instantáneo',how:'Agita el bote. Spray a 20cm de distancia. Apto encima del skincare y sin manchar ropa. Usar si llevas más de 2h en exterior madrileño.',link:'https://www.amazon.es/s?k=isdin+fusion+air+spf+50',linkLabel:'Amazon ES',duration:'~2 meses',step:5,phase:1,note:'Solo si llevas +2h fuera',restock:true},
+  // PM — phase 2 (semanas 3-4)
+  {id:'micelar',name:'Sensibio H2O',brand:'Bioderma',price:'~12€',session:'pm',amount:'2–3 discos',wait:'Inmediato',how:'Disco bien empapado. Pasa sin frotar, hasta que el algodón salga limpio. No aclarar. Retira el SPF del día.',link:'https://www.primor.eu/buscar?search=bioderma+sensibio',linkLabel:'Primor',duration:'~2 meses',step:1,phase:2},
+  {id:'lrp-clean2',name:'Toleriane Cleanser (2ª limpieza)',brand:'La Roche-Posay',price:'—',session:'pm',amount:'1 bomba',wait:'30 seg — seca bien',how:'Segunda limpieza que llega a la piel real. Imprescindible que la piel quede COMPLETAMENTE SECA antes de aplicar activos nocturnos.',link:'https://www.amazon.es/s?k=La+Roche-Posay+Toleriane+Hydrating+Gentle+Cleanser',linkLabel:'Amazon ES (mismo bote AM)',duration:'compartido',step:2,phase:2},
+  {id:'niacin',name:'Niacinamide 10% + Zinc 1%',brand:'The Inkey List',price:'~12€',session:'pm',amount:'3–4 gotas',wait:'2 min',how:'Noches SIN retinol. Toquecitos en frente, mejillas, nariz y mentón. Dejar absorber completamente antes del siguiente paso.',link:'https://www.amazon.es/s?k=the+inkey+list+niacinamide+10',linkLabel:'Amazon ES',duration:'~3 meses',step:3,phase:2},
+  {id:'endocare',name:'Tensage Radiance Cream',brand:'Endocare',price:'~55€',session:'pm',amount:'1 guisante (~0.5ml)',wait:'Último paso PM',how:'Último paso siempre. Calienta entre los dedos. Movimientos ascendentes en cuello y cara. Los péptidos y SCA trabajan durante el sueño.',link:'https://www.amazon.es/s?k=endocare+tensage+radiance',linkLabel:'Amazon ES',duration:'~2 meses',step:4,phase:2},
+  // PM — phase 4 (semanas 7-8)
+  {id:'caffeine',name:'Caffeine Solution 5%',brand:'The Ordinary',price:'~10€',session:'pm',amount:'1 gota/ojo',wait:'1 min',how:'Solo con el dedo ANULAR. Toquecitos desde el lagrimal hacia la sien. NUNCA en el párpado superior. Guardar en nevera para mayor efecto vasoconstrictor.',link:'https://www.amazon.es/s?k=the+ordinary+caffeine+solution+5',linkLabel:'Amazon ES',duration:'~4 meses',step:3,phase:4},
+  // PM — phase 5 (semanas 9-10)
+  {id:'retinal',name:'Crystal Retinal 1',brand:'Medik8',price:'~45€',session:'pm',amount:'1 presión (~0.3ml)',wait:'5 min',how:'Solo piel COMPLETAMENTE SECA. 1 sola presión para toda la cara. Evitar contorno de ojo y comisuras de labios. Empezar 2×/semana. Nunca la misma noche que la niacinamida.',link:'https://www.sephora.es/search?q=medik8+crystal+retinal',linkLabel:'Sephora ES',duration:'~5 meses',step:4,phase:5,note:'Empezar 2×/semana'},
+];
+
+// Devuelve solo productos de la fase activa o anterior
+function getActiveProducts(session){
+  const unlocked = state.unlockedPhase || 1;
+  return PRODUCTS
+    .filter(p => p.session === session && p.phase <= unlocked)
+    .sort((a,b) => a.step - b.step);
+}
+
+// Devuelve productos bloqueados (siguiente fase)
+function getLockedProducts(session){
+  const unlocked = state.unlockedPhase || 1;
+  const nextPhase = getNextPhase(unlocked);
+  if(!nextPhase) return [];
+  return PRODUCTS.filter(p => p.session === session && p.phase === nextPhase.phase);
+}
+
+function getNextPhase(currentUnlocked){
+  return INTRO_SCHEDULE.find(p => p.phase === currentUnlocked + 1) || null;
+}
+
+const WEEK_DATA = [
+  {week:1,title:'Reparación de Barrera',phase:'Fase I',goals:['Usar limpiador + Cicaplast B5 todas las mañanas','Usar Niacinamida todas las noches','Aplicar SPF 50+ cada día sin excepción','Completar 7 días de doble limpieza nocturna'],result:'Piel más cómoda, menos tirantez. Rojez aguda reducida.'},
+  {week:2,title:'Estabilización Barrera',phase:'Fase I',goals:['Mantener rutina base completa x7 días','Ningún producto nuevo aún','Hidratación: piel ligeramente húmeda para sérum','Observar si hay mejora en tirantez y rojez'],result:'Barrera cutánea en proceso de reparación activa.'},
+  {week:3,title:'Primera Vitamina C',phase:'Fase II',goals:['Introducir Vitamina C días alternos (L·M·V)','No usar Vit C y Niacinamida el mismo día','Documentar rojez con foto al inicio de semana','Mantener SPF diario y doble limpieza nocturna'],result:'Textura más uniforme. Primeras mejoras visibles.'},
+  {week:4,title:'Introducción Retinaldehído',phase:'Fase II',goals:['Empezar Crystal Retinal 1: solo 2 noches esta semana','Piel SECA antes de aplicar retinal','No usar retinal y niacinamida la misma noche','Foto de seguimiento: frente + perfil'],result:'Activación del ciclo de renovación celular.'},
+  {week:5,title:'Retinal x3 Noches',phase:'Fase III',goals:['Escalar Crystal Retinal a 3 noches/semana','Si hay descamación: reducir frecuencia, no cantidad','Endocare Tensage todas las noches','Foto semanal obligatoria'],result:'Arrugas dinámicas más superficiales. Luminosidad.'},
+  {week:6,title:'Resultados Iniciales',phase:'Fase III',goals:['Retinal 4 noches/semana si se tolera bien','Comparativa fotográfica: S1 vs S6','Evaluar rojez: ¿mejora del 20%? ¿más?','SPF reaplicado al mediodía en días de sol'],result:'Reducción visible del eritema y mejora de textura.'},
+  {week:7,title:'Consolidación',phase:'Fase III',goals:['Retinal en noches alternas (si tolerancia buena)','Vitamina C Diaria (ya no días alternos)','Racha de 7 días completos esta semana','Foto semanal: tres ángulos'],result:'Piel más densa y luminosa. Turgencia mejorada.'},
+  {week:8,title:'Análisis 2 Meses',phase:'Fase III',goals:['Foto comparativa S1 vs S4 vs S8','Evaluar: ¿escalar a Crystal Retinal 3?','Endocare en ambas mañana y noche si piel lo pide','Reflexionar sobre intervención médica si rojez persiste'],result:'Mejora significativa de firmeza y arrugas.'},
+  {week:9,title:'Retinal Avanzado',phase:'Fase IV',goals:['Crystal Retinal 3 si se toleró bien el 1','Añadir AHA suave (ácido mandélico 5%) 1×/semana si disponible','Foto semanal. Racha objetivo: 63 días','Valorar consulta dermatólogo si eritema >30%'],result:'Renovación celular activa. Poros más finos.'},
+  {week:10,title:'Mantenimiento Activo',phase:'Fase IV',goals:['Protocolo completo consolidado','Sin nuevos productos esta semana','Foto de seguimiento','Restock: revisar qué productos quedan <25%'],result:'Resultados acumulativos visibles.'},
+  {week:11,title:'Pre-evaluación',phase:'Fase IV',goals:['Foto comparativa definitiva S1 vs S11','Documentar cambios objetivos en textura y rojez','Evaluar si se precisa intervención médica (botox, IPL)','Mantener racha de 77 días'],result:'Evaluación crítica de resultados.'},
+  {week:12,title:'Evaluación Final 3 Meses',phase:'Fase IV',goals:['Foto comparativa completa (todas las semanas)','Decidir protocolo de mantenimiento','Consulta dermatológica si eritema persiste','Informe personal de evolución'],result:'Protocolo de 3 meses completado. Resultados medibles.'},
+];
+
+const ACHIEVEMENTS = [
+  {id:'first_day',title:'Día 1',desc:'Primera rutina completada',icon:'◉',trigger:'streak1'},
+  {id:'week1',title:'Semana 1 completada',desc:'7 días consecutivos',icon:'▦',trigger:'streak7'},
+  {id:'streak14',title:'Racha 14 días',desc:'Dos semanas sin fallar',icon:'◈',trigger:'streak14'},
+  {id:'all_products',title:'Arsenal completo',desc:'Todos los productos comprados',icon:'◎',trigger:'allproducts'},
+  {id:'streak30',title:'Mes completo',desc:'30 días de constancia',icon:'★',trigger:'streak30'},
+  {id:'week4',title:'Retinol iniciado',desc:'Semana 4 completada',icon:'◻',trigger:'week4'},
+  {id:'streak60',title:'60 días',desc:'Dos meses de rutina',icon:'⬡',trigger:'streak60'},
+  {id:'week12',title:'Protocolo completo',desc:'12 semanas cumplidas',icon:'◆',trigger:'week12'},
+];
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+function loadState(){
+  try{ return JSON.parse(localStorage.getItem('derm_state')||'{}'); }catch(e){return{};}
+}
+function saveState(){
+  localStorage.setItem('derm_state', JSON.stringify(state));
+}
+
+let state = Object.assign({
+  owned: {},        // productId -> bool
+  todayChecks: {},  // "YYYY-MM-DD_stepId" -> bool
+  dayCompleted: {}, // "YYYY-MM-DD" -> bool
+  weekCompleted: {},// weekNum -> bool
+  weekGoals: {},    // "w_goal" -> bool
+  achievements: {}, // achId -> bool
+  streak: 0,
+  lastStreakDate: null,
+  photos: [],       // [{week,date,imgs:[base64],report}]
+  currentWeek: 1,
+  unlockedPhase: 1, // fases desbloqueadas (1 = solo base)
+  startDate: new Date().toISOString().split('T')[0],
+}, loadState());
+
+// ═══════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════
+function today(){ return new Date().toISOString().split('T')[0]; }
+function todayKey(stepId){ return today()+'_'+stepId; }
+function getHour(){ return new Date().getHours(); }
+function isAM(){ return getHour() < 14; }
+function fmt(d){ return new Date(d).toLocaleDateString('es-ES',{day:'numeric',month:'short'}); }
+function toast(msg, dur=2200){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),dur);
+}
+
+function calcStreak(){
+  const d=new Date(); let streak=0;
+  for(let i=0;i<120;i++){
+    const k=d.toISOString().split('T')[0];
+    if(state.dayCompleted[k]){streak++;d.setDate(d.getDate()-1);}
+    else if(k===today()){d.setDate(d.getDate()-1); continue;}
+    else break;
+  }
+  return streak;
+}
+
+function getCurrentWeek(){
+  const start=new Date(state.startDate);
+  const now=new Date();
+  const diff=Math.floor((now-start)/(1000*60*60*24*7));
+  return Math.min(12, Math.max(1, diff+1));
+}
+
+function getTodayProgress(){
+  const all=[...getActiveProducts('am'),...getActiveProducts('pm')];
+  if(!all.length) return 0;
+  const done=all.filter(p=>state.todayChecks[todayKey(p.id)]).length;
+  return Math.round((done/all.length)*100);
+}
+
+function getWeekProgress(){
+  const start=new Date(); start.setDate(start.getDate()-start.getDay()+1);
+  let total=0,done=0;
+  for(let i=0;i<7;i++){
+    const d=new Date(start); d.setDate(d.getDate()+i);
+    const k=d.toISOString().split('T')[0];
+    total+=14; // 5am + 6pm steps + 3 overlap = ~11 steps
+    if(state.dayCompleted[k]) done+=14;
+  }
+  return Math.round((done/total)*100);
+}
+
+function checkAchievements(){
+  const streak=calcStreak();
+  const owned=PRODUCTS.filter(p=>state.owned[p.id]).length;
+  const maps={
+    streak1: streak>=1,
+    streak7: streak>=7,
+    streak14: streak>=14,
+    streak30: streak>=30,
+    streak60: streak>=60,
+    allproducts: owned>=PRODUCTS.length,
+    week4: state.weekCompleted[4],
+    week12: state.weekCompleted[12],
+  };
+  ACHIEVEMENTS.forEach(a=>{
+    if(!state.achievements[a.id] && maps[a.trigger]){
+      state.achievements[a.id]=true;
+      toast('🏆 Logro desbloqueado: '+a.title);
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════════
+function goTo(page, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(page==='home') renderHome();
+  if(page==='week') renderWeek();
+  if(page==='products') renderProducts();
+  if(page==='semanas') renderSemanas();
+  if(page==='intro') renderIntro();
+  if(page==='fotos') renderFotos();
+}
+
+// ═══════════════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════════════
+let activeTab = 'am'; // siempre arranca en AM, usuario cambia manualmente
+
+function switchTab(tab){
+  activeTab=tab;
+  const tabAM=document.getElementById('tabAM');
+  const tabPM=document.getElementById('tabPM');
+  if(tab==='am'){
+    tabAM.style.borderBottomColor='var(--am)';tabAM.style.color='var(--am)';
+    tabPM.style.borderBottomColor='transparent';tabPM.style.color='var(--muted)';
+  } else {
+    tabPM.style.borderBottomColor='var(--pm)';tabPM.style.color='var(--pm)';
+    tabAM.style.borderBottomColor='transparent';tabAM.style.color='var(--muted)';
+  }
+  renderTodaySteps(tab==='am');
+}
+
+function renderHome(){
+  const am=isAM();
+  const ind=document.getElementById('timeIndicator');
+  ind.textContent=am?'☀ Turno Mañana':'🌙 Turno Noche';
+  ind.className='time-indicator '+(am?'time-am':'time-pm');
+
+  const h=getHour();
+  let greet='Buenos días';
+  if(h>=14&&h<20) greet='Buenas tardes';
+  else if(h>=20||h<6) greet='Buenas noches';
+  document.getElementById('homeTitle').textContent=greet;
+
+  const pct=getTodayProgress();
+  const amAllDone=PRODUCTS.filter(p=>p.session==='am').every(p=>state.todayChecks[todayKey(p.id)]);
+  const pmAllDone=PRODUCTS.filter(p=>p.session==='pm').every(p=>state.todayChecks[todayKey(p.id)]);
+  let subtitle='';
+  if(pct===100) subtitle='Rutina completa del día ✓';
+  else if(amAllDone) subtitle='AM ✓ · PM pendiente';
+  else if(pmAllDone) subtitle='PM ✓ · AM pendiente';
+  else subtitle='AM y PM pendientes';
+  document.getElementById('homeSubtitle').textContent=subtitle;
+  document.getElementById('statDone').textContent=pct+'%';
+
+  const streak=calcStreak();
+  state.streak=streak;
+  document.getElementById('statStreak').textContent=streak;
+  document.getElementById('streakDisplay').textContent=streak+' días';
+  document.getElementById('statWeek').textContent='S'+getCurrentWeek();
+
+  const wp=getWeekProgress();
+  document.getElementById('weekPct').textContent=wp+'%';
+  document.getElementById('weekBar').style.width=wp+'%';
+
+  document.getElementById('todayDate').textContent=
+    new Date().toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
+
+  // update tab indicators with completion marks
+  const tabAM=document.getElementById('tabAM');
+  const tabPM=document.getElementById('tabPM');
+  if(tabAM) tabAM.textContent=amAllDone?'☀ Mañana ✓':'☀ Mañana';
+  if(tabPM) tabPM.textContent=pmAllDone?'🌙 Noche ✓':'🌙 Noche';
+  switchTab(activeTab);
+
+  const restockItems=PRODUCTS.filter(p=>p.restock&&!state.owned[p.id]);
+  const rc=document.getElementById('restockCount');
+  const rs=document.getElementById('restockSub');
+  if(restockItems.length){rc.textContent=restockItems.length;rc.style.color='var(--r)';rs.textContent='productos';}
+  else{rc.textContent='✓';rc.style.color='var(--g)';rs.textContent='sin alertas';}
+
+  checkAchievements();
+  updateHomeIntroCard(getCurrentWeek());
+  saveState();
+}
+
+function renderTodaySteps(am){
+  const container=document.getElementById('todaySteps');
+  if(!container) return;
+  container.innerHTML='';
+  const session=am?'am':'pm';
+  const steps=getActiveProducts(session);
+  const locked=getLockedProducts(session);
+  // render locked preview at bottom
+  const renderLocked=()=>{
+    if(!locked.length) return;
+    const nextPhase=getNextPhase(state.unlockedPhase||1);
+    const divider=document.createElement('div');
+    divider.style.cssText='padding:10px 16px 6px;display:flex;align-items:center;gap:8px;';
+    divider.innerHTML=`<div style="flex:1;height:1px;background:var(--border);"></div><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;white-space:nowrap;">🔒 Fase ${nextPhase?nextPhase.phase:''} — ${nextPhase?'Sem '+nextPhase.weeks:''}</span><div style="flex:1;height:1px;background:var(--border);"></div>`;
+    container.appendChild(divider);
+    locked.forEach(p=>{
+      const el=document.createElement('div');
+      el.style.cssText='display:flex;align-items:center;gap:12px;padding:11px 16px;opacity:0.35;border-bottom:1px solid var(--border);';
+      el.innerHTML=`<div style="width:28px;height:28px;border-radius:8px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🔒</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:500;">${p.step}. ${p.name}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub);">${p.brand} · Disponible en Sem ${nextPhase?nextPhase.weeks:''}</div></div>`;
+      container.appendChild(el);
+    });
+    // unlock button
+    if(nextPhase){
+      const btn=document.createElement('div');
+      btn.style.cssText='margin:10px 16px 6px;padding:12px 16px;background:var(--s2);border:1px dashed var(--border);border-radius:10px;cursor:pointer;text-align:center;';
+      btn.innerHTML=`<div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub);margin-bottom:4px;">DESBLOQUEAR FASE ${nextPhase.phase}</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--am);">Activar: ${nextPhase.label} →</div>`;
+      btn.onclick=()=>unlockNextPhase();
+      container.appendChild(btn);
+    }
+  };
+  const steps_orig=steps;
+  const stepsFiltered=steps_orig;
+  const stepsArr=stepsFiltered;
+  // use stepsArr below
+  const stepsToRender=stepsArr;
+  stepsToRender.forEach(p=>{
+    const key=todayKey(p.id);
+    const done=!!state.todayChecks[key];
+    const el=document.createElement('div');
+    el.style.cssText='border-bottom:1px solid var(--border);';
+    const noteHtml=p.note?` · <em style="color:var(--pm);font-size:11px;">${p.note}</em>`:'';
+    el.innerHTML=`
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;" onclick="toggleStepExpand('home_${p.id}')">
+        <div class="step-check ${done?(am?'done-am':'done-pm'):''}" onclick="event.stopPropagation();toggleStep('${p.id}',${am})">${done?'✓':''}</div>
+        <div class="step-info-home" style="flex:1;min-width:0;">
+          <div class="step-name">${p.step}. ${p.name}</div>
+          <div class="step-detail">${p.brand} · ${p.amount}${noteHtml}</div>
+        </div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);">${p.wait}</span>
+        <span id="harr_${p.id}" style="font-size:16px;color:var(--muted);display:inline-block;transition:transform 0.2s;margin-left:4px;">›</span>
+      </div>
+      <div id="home_${p.id}" style="display:none;padding:0 16px 14px 56px;background:var(--s2);">
+        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;padding:3px 10px;border-radius:20px;background:var(--am2);color:var(--am);border:1px solid rgba(245,158,11,0.2);">📏 ${p.amount}</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;padding:3px 10px;border-radius:20px;background:var(--s3);color:var(--sub);border:1px solid var(--border);">⏱ ${p.wait}</span>
+        </div>
+        <div style="font-size:12px;color:var(--sub);line-height:1.6;margin-bottom:10px;padding:9px 11px;background:var(--s1);border-radius:8px;border-left:3px solid var(--am);">${p.how}</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;">DÓNDE COMPRAR</div>
+        <a href="${p.link}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--pm);text-decoration:none;padding:6px 12px;background:var(--pm2);border:1px solid rgba(129,140,248,0.2);border-radius:8px;" onclick="event.stopPropagation()">→ ${p.linkLabel} · ${p.price}</a>
+      </div>
+    `;
+    container.appendChild(el);
+  });
+  renderLocked();
+}
+
+function toggleStepExpand(id){
+  const exp=document.getElementById(id);
+  const prodId=id.replace('home_','');
+  const arr=document.getElementById('harr_'+prodId);
+  if(!exp) return;
+  const open=exp.style.display==='block';
+  exp.style.display=open?'none':'block';
+  if(arr) arr.style.transform=open?'':'rotate(90deg)';
+}
+
+function toggleStep(id, am){
+  const key=todayKey(id);
+  state.todayChecks[key]=!state.todayChecks[key];
+  // close expand if open
+  const exp=document.getElementById('home_'+id);
+  // keep expand state
+  const amDone=PRODUCTS.filter(p=>p.session==='am').every(p=>state.todayChecks[todayKey(p.id)]);
+  const pmDone=PRODUCTS.filter(p=>p.session==='pm').every(p=>state.todayChecks[todayKey(p.id)]);
+  if(amDone&&pmDone){
+    state.dayCompleted[today()]=true;
+    toast('✓ Rutina completa del día registrada');
+  } else if(PRODUCTS.filter(p=>p.session===(am?'am':'pm')).every(p=>state.todayChecks[todayKey(p.id)])){
+    toast(am?'✓ Rutina AM completada — falta PM':'✓ Rutina PM completada — falta AM');
+  }
+  saveState();
+  renderHome();
+}
+
+function unlockNextPhase(){
+  const next=getNextPhase(state.unlockedPhase||1);
+  if(!next) return;
+  // show confirmation modal
+  const html=`<div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:8px;">Desbloquear Fase ${next.phase}</div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--am);margin-bottom:16px;">Semanas ${next.weeks} · ${next.label}</div>
+    <div style="font-size:13px;color:var(--sub);line-height:1.6;margin-bottom:16px;">Vas a añadir estos productos a tu rutina activa:<br><br>
+    ${next.products.map((id,i)=>{
+      const p=PRODUCTS.find(x=>x.id===id);
+      return p?`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">· ${next.names[i]}</div>`:'';
+    }).join('')}
+    </div>
+    <div style="font-size:12px;color:var(--sub);line-height:1.55;padding:10px 12px;background:var(--am2);border-radius:8px;border:1px solid rgba(245,158,11,0.2);margin-bottom:16px;">${next.note}</div>
+    <button onclick="confirmUnlock(${next.phase})" style="width:100%;padding:13px;background:var(--g2);border:1px solid rgba(52,211,153,0.3);border-radius:10px;color:var(--g);font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px;">✓ Confirmar — Activar Fase ${next.phase}</button>
+    <button onclick="closeModal()" style="width:100%;padding:11px;background:var(--s3);border:1px solid var(--border);border-radius:10px;color:var(--sub);font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;">Cancelar</button>`;
+  openModal(html);
+}
+
+function confirmUnlock(phase){
+  state.unlockedPhase=phase;
+  saveState();
+  closeModal();
+  const phaseName=INTRO_SCHEDULE.find(p=>p.phase===phase);
+  toast('🔓 Fase '+phase+' activada: '+(phaseName?phaseName.label:''));
+  renderHome();
+  // also refresh intro if open
+  const introPage=document.getElementById('page-intro');
+  if(introPage&&introPage.classList.contains('active')) renderIntro();
+}
+
+function openFastTrack(){
+  const am=activeTab==='am';
+  const steps=getActiveProducts(am?'am':'pm');
+  let html=`<div class="modal-title">⚡ Fast Track — ${am?'Mañana':'Noche'}</div>`;
+  steps.forEach(p=>{
+    const k=todayKey(p.id);
+    const done=!!state.todayChecks[k];
+    html+=`<div class="routine-step" style="padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="ftToggle('${p.id}',${am})">
+      <div class="step-check ${done?(am?'done-am':'done-pm'):''}">${done?'✓':''}</div>
+      <div class="step-info-home"><div class="step-name">${p.step}. ${p.name}</div><div class="step-detail">${p.amount} · esperar ${p.wait}</div></div>
+    </div>`;
+  });
+  html+=`<button onclick="markAllDone(${am})" style="width:100%;margin-top:16px;padding:13px;background:var(--g2);border:1px solid rgba(52,211,153,0.3);border-radius:10px;color:var(--g);font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">Marcar todo completado</button>`;
+  openModal(html);
+}
+
+function ftToggle(id,am){
+  const key=todayKey(id);
+  state.todayChecks[key]=!state.todayChecks[key];
+  saveState();
+  openFastTrack();
+  renderHome();
+}
+
+function markAllDone(am){
+  PRODUCTS.filter(p=>p.session===(am?'am':'pm')).forEach(p=>{
+    state.todayChecks[todayKey(p.id)]=true;
+  });
+  const amDone=PRODUCTS.filter(p=>p.session==='am').every(p=>state.todayChecks[todayKey(p.id)]);
+  const pmDone=PRODUCTS.filter(p=>p.session==='pm').every(p=>state.todayChecks[todayKey(p.id)]);
+  if(amDone&&pmDone) state.dayCompleted[today()]=true;
+  saveState();
+  closeModal();
+  renderHome();
+  toast(am?'✓ Todos los pasos AM marcados':'✓ Todos los pasos PM marcados');
+}
+
+// ═══════════════════════════════════════════════
+// WEEK
+// ═══════════════════════════════════════════════
+function renderWeek(){
+  const grid=document.getElementById('daysGrid');
+  grid.innerHTML='';
+  const days=['L','M','X','J','V','S','D'];
+  const now=new Date();
+  const dow=now.getDay()===0?6:now.getDay()-1;
+  const monday=new Date(now); monday.setDate(now.getDate()-dow);
+
+  let rangeLabel='';
+  const rangeStart=new Date(monday);
+  const rangeEnd=new Date(monday); rangeEnd.setDate(rangeEnd.getDate()+6);
+  rangeLabel=fmt(rangeStart)+' – '+fmt(rangeEnd);
+  document.getElementById('weekRangeLabel').textContent=rangeLabel;
+
+  for(let i=0;i<7;i++){
+    const d=new Date(monday); d.setDate(d.getDate()+i);
+    const k=d.toISOString().split('T')[0];
+    const isToday=k===today();
+    const isComplete=!!state.dayCompleted[k];
+    // partial: any step done
+    const anyDone=PRODUCTS.some(p=>state.todayChecks[k+'_'+p.id]);
+
+    const dot=document.createElement('div');
+    dot.className='day-dot';
+    dot.innerHTML=`
+      <div class="day-circle ${isToday?'today':''} ${isComplete?'complete':anyDone?'partial':''}">${d.getDate()}</div>
+      <div class="day-label">${days[i]}</div>
+    `;
+    dot.onclick=()=>selectDay(d, k, i, monday);
+    grid.appendChild(dot);
+  }
+
+  // default show today
+  const todayDow=dow;
+  const todayD=new Date(monday); todayD.setDate(todayD.getDate()+todayDow);
+  selectDay(todayD, today(), todayDow, monday);
+}
+
+function selectDay(d, k, dayIdx, monday){
+  const container=document.getElementById('dayDetail');
+  container.innerHTML='';
+
+  const amDone=(p)=>!!state.todayChecks[k+'_'+p.id];
+
+  ['am','pm'].forEach(session=>{
+    const steps=PRODUCTS.filter(p=>p.session===session);
+    const label=session==='am'?'☀ Mañana (7–9h)':'🌙 Noche (21–22h)';
+    const allDone=steps.every(p=>amDone(p));
+    const ds=document.createElement('div');
+    ds.className='day-session';
+    ds.innerHTML=`<div class="ds-header">
+      <div class="ds-title">${label}</div>
+      <div class="ds-time">${allDone?'<span style="color:var(--g)">✓ Completado</span>':'Pendiente'}</div>
+    </div>`;
+    steps.forEach(p=>{
+      const done=amDone(p);
+      const row=document.createElement('div');
+      row.className='ds-step';
+      row.innerHTML=`
+        <div class="ds-check ${done?(session==='am'?'ok-am':'ok-pm'):''}">${done?'✓':''}</div>
+        <div class="ds-name">${p.step}. ${p.name}</div>
+        <div class="ds-wait">${p.wait}</div>
+      `;
+      row.onclick=()=>{
+        state.todayChecks[k+'_'+p.id]=!state.todayChecks[k+'_'+p.id];
+        const allAmDone=PRODUCTS.filter(x=>x.session==='am').every(x=>state.todayChecks[k+'_'+x.id]);
+        const allPmDone=PRODUCTS.filter(x=>x.session==='pm').every(x=>state.todayChecks[k+'_'+x.id]);
+        if(allAmDone&&allPmDone) state.dayCompleted[k]=true;
+        saveState();
+        renderWeek();
+      };
+      ds.appendChild(row);
+    });
+    container.appendChild(ds);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// PRODUCTS
+// ═══════════════════════════════════════════════
+function renderProducts(){
+  const amList=document.getElementById('prodListAM');
+  const pmList=document.getElementById('prodListPM');
+  amList.innerHTML='';
+  pmList.innerHTML='';
+  const owned=PRODUCTS.filter(p=>state.owned[p.id]).length;
+  const unlocked=state.unlockedPhase||1;
+  document.getElementById('prodCount').textContent=owned+'/'+PRODUCTS.length+' comprados · Fase '+unlocked+' activa';
+
+  PRODUCTS.forEach(p=>{
+    const isOwned=!!state.owned[p.id];
+    const el=document.createElement('div');
+    const isActive=p.phase<=(state.unlockedPhase||1);
+    const phaseInfo=INTRO_SCHEDULE.find(x=>x.phase===p.phase);
+    el.style.cssText='border-bottom:1px solid var(--border);'+(isActive?'':'opacity:0.45;');
+    const noteHtml=p.note?`<span style="font-family:'IBM Plex Mono',monospace;font-size:10px;padding:3px 10px;border-radius:20px;background:var(--pm2);color:var(--pm);border:1px solid rgba(129,140,248,0.2);">⚠ ${p.note}</span>`:'';
+    const lockHtml=!isActive?`<span style="font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 8px;border-radius:20px;background:var(--s3);color:var(--muted);border:1px solid var(--border);">🔒 Sem ${phaseInfo?phaseInfo.weeks:'?'}</span>`:'';
+    el.innerHTML=`
+      <div class="product-item" style="border-bottom:none;" onclick="${isActive?`toggleProdExpand('${p.id}')`:``}">
+        <div class="prod-check ${isOwned&&isActive?'owned':''}" onclick="event.stopPropagation();${isActive?`toggleProduct('${p.id}')`:''}">
+          ${!isActive?'🔒':isOwned?'✓':''}
+        </div>
+        <div class="prod-info">
+          <div class="prod-name">${p.step}. ${p.name} ${lockHtml}</div>
+          <div class="prod-brand">${p.brand} · ${p.duration} · <span style="color:var(--am)">${p.price}</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          ${isActive?`<span id="arr_${p.id}" style="font-size:18px;color:var(--muted);display:inline-block;transition:transform 0.2s;">›</span>`:''}
+        </div>
+      </div>
+      <div id="exp_${p.id}" style="display:none;padding:0 16px 16px 54px;background:var(--s2);">
+        <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;padding:3px 10px;border-radius:20px;background:var(--am2);color:var(--am);border:1px solid rgba(245,158,11,0.2);">📏 ${p.amount}</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;padding:3px 10px;border-radius:20px;background:var(--s3);color:var(--sub);border:1px solid var(--border);">⏱ ${p.wait}</span>
+          ${noteHtml}
+        </div>
+        <div style="font-size:13px;color:var(--sub);line-height:1.65;margin-bottom:12px;padding:10px 12px;background:var(--s1);border-radius:8px;border-left:3px solid var(--am);">${p.how}</div>
+        <a href="${p.link}" target="_blank" class="prod-link" onclick="event.stopPropagation()">→ Comprar en ${p.linkLabel}</a>
+      </div>
+    `;
+    if(p.session==='am') amList.appendChild(el);
+    else pmList.appendChild(el);
+  });
+}
+
+function toggleProduct(id){
+  state.owned[id]=!state.owned[id];
+  if(state.owned[id]) toast('✓ Marcado como comprado');
+  else toast('Desmarcado');
+  saveState();
+  checkAchievements();
+  renderProducts();
+}
+
+function toggleProdExpand(id){
+  const exp=document.getElementById('exp_'+id);
+  const arr=document.getElementById('arr_'+id);
+  if(!exp) return;
+  const open=exp.style.display==='block';
+  exp.style.display=open?'none':'block';
+  if(arr) arr.style.transform=open?'':'rotate(90deg)';
+}
+
+// ═══════════════════════════════════════════════
+// SEMANAS / LOGROS
+// ═══════════════════════════════════════════════
+function renderSemanas(){
+  renderAchievements();
+  const container=document.getElementById('weekCards');
+  container.innerHTML='';
+  const currentW=getCurrentWeek();
+
+  WEEK_DATA.forEach(w=>{
+    const isComplete=!!state.weekCompleted[w.week];
+    const isActive=w.week===currentW;
+    const isLocked=w.week>currentW+1;
+
+    const card=document.createElement('div');
+    card.className='week-card';
+    const numClass=isComplete?'complete-w':isActive?'active-w':'locked';
+    const badge=isComplete?`<span class="wc-badge tag tag-both">✓ Completada</span>`:
+      isActive?`<span class="wc-badge tag tag-am">En curso</span>`:
+      isLocked?`<span class="wc-badge" style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted)">Bloqueada</span>`:'';
+
+    card.innerHTML=`
+      <div class="wc-header" onclick="toggleWeekCard(${w.week})">
+        <div class="wc-num ${numClass}">${w.week}</div>
+        <div class="wc-info">
+          <div class="wc-title">${w.title}</div>
+          <div class="wc-sub">${w.phase} · ${w.goals.length} objetivos</div>
+        </div>
+        ${badge}
+      </div>
+      <div class="wc-body" id="wb${w.week}">
+        ${w.goals.map((g,i)=>{
+          const gk=`${w.week}_${i}`;
+          const done=!!state.weekGoals[gk];
+          return `<div class="wc-goal">
+            <div class="wc-goal-check ${done?'done':''}" onclick="toggleWeekGoal('${gk}')">${done?'✓':''}</div>
+            <span>${g}</span>
+          </div>`;
+        }).join('')}
+        <div style="margin-top:10px;padding:10px;background:var(--g3);border-radius:8px;border:1px solid rgba(52,211,153,0.15);">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub);margin-bottom:4px;">RESULTADO ESPERADO</div>
+          <div style="font-size:13px;color:var(--sub);">${w.result}</div>
+        </div>
+        ${!isComplete&&!isLocked?`<button class="complete-btn" onclick="completeWeek(${w.week})">Marcar semana ${w.week} como completada</button>`:''}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function toggleWeekCard(n){
+  const body=document.getElementById('wb'+n);
+  body.classList.toggle('open');
+}
+
+function toggleWeekGoal(key){
+  state.weekGoals[key]=!state.weekGoals[key];
+  saveState();
+  renderSemanas();
+}
+
+function completeWeek(n){
+  state.weekCompleted[n]=true;
+  toast('✓ Semana '+n+' completada');
+  saveState();
+  checkAchievements();
+  renderSemanas();
+}
+
+function renderAchievements(){
+  const container=document.getElementById('achievements');
+  container.innerHTML='';
+  ACHIEVEMENTS.forEach(a=>{
+    const unlocked=!!state.achievements[a.id];
+    const el=document.createElement('div');
+    el.className='achievement-card'+(unlocked?'':' ach-locked');
+    el.innerHTML=`
+      <div class="ach-icon">${a.icon}</div>
+      <div class="ach-info">
+        <div class="ach-title">${a.title}</div>
+        <div class="ach-sub">${a.desc}${unlocked?' · Desbloqueado':' · Bloqueado'}</div>
+      </div>
+    `;
+    container.appendChild(el);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// INTRODUCCIÓN PROGRESIVA
+// ═══════════════════════════════════════════════
+const INTRO_SCHEDULE = [
+  {
+    phase: 1, weeks: '1–2', label: 'Base segura',
+    color: 'var(--g)', colordim: 'var(--g2)', colorborder: 'rgba(52,211,153,0.25)',
+    products: ['lrp-clean','cicaplast','cicalfate','spf','spf-spray'],
+    names: ['Toleriane Cleanser (AM)', 'Cicaplast B5 Sérum (AM)', 'Cicalfate+ Crème (AM)', 'Eryfotona SPF 50+ (AM)', 'Fusion Air SPF Spray (reaplicación)'],
+    note: 'Los tres a la vez — sin activos, solo reparación y protección. Turno mañana completo desde el día 1.',
+    reaction: 'Muy improbable. Si hay rojez con el SPF, prueba Heliocare 360° como alternativa.',
+    startWeek: 1,
+  },
+  {
+    phase: 2, weeks: '3–4', label: 'Niacinamida',
+    color: 'var(--pm)', colordim: 'var(--pm2)', colorborder: 'rgba(129,140,248,0.25)',
+    products: ['micelar','lrp-clean2','niacin','endocare'],
+    names: ['Sensibio H2O (PM)', 'Toleriane Cleanser 2ª limpieza (PM)', 'Niacinamide 10% + Zinc (PM)', 'Endocare Tensage Cream (PM)'],
+    note: 'Introduce la rutina PM completa. Niacinamida todas las noches. Espera 2 semanas de rutina base estable antes de empezar.',
+    reaction: 'Si hay picor o rojez con la niacinamida, reduce a 3 noches/semana y escala gradualmente.',
+    startWeek: 3,
+  },
+  {
+    phase: 3, weeks: '5–6', label: 'Vitamina C',
+    color: 'var(--am)', colordim: 'var(--am2)', colorborder: 'rgba(245,158,11,0.25)',
+    products: ['vitc'],
+    names: ['Vitamina C Ascorbyl Glucoside 12% (AM, días alternos)'],
+    note: 'Solo L·M·V por la mañana. No el mismo día que la niacinamida si notas sensibilidad. Espera que semanas 3–4 estén estables.',
+    reaction: 'Si hay escozor al aplicar, dilúyela mezclándola con el Cicaplast. Si persiste, descártala.',
+    startWeek: 5,
+  },
+  {
+    phase: 4, weeks: '7–8', label: 'Contorno ojos',
+    color: 'var(--sub)', colordim: 'var(--s2)', colorborder: 'var(--border)',
+    products: ['caffeine'],
+    names: ['Caffeine Solution 5% (PM, contorno ojos)'],
+    note: 'Solo el contorno de ojo con el anular. Guardar en nevera para mayor efecto vasoconstrictor.',
+    reaction: 'Prácticamente sin riesgo. Si hay irritación en el ojo, aplica más lejos del párpado.',
+    startWeek: 7,
+  },
+  {
+    phase: 5, weeks: '9–10', label: 'Crystal Retinal',
+    color: '#A78BFA', colordim: 'rgba(167,139,250,0.15)', colorborder: 'rgba(167,139,250,0.25)',
+    products: ['retinal'],
+    names: ['Crystal Retinal 1 (PM, empezar 2 noches/sem)'],
+    note: '⚠ El más potente. Piel SECA antes de aplicar. Solo 2 noches/semana las primeras 2 semanas. Nunca con niacinamida la misma noche.',
+    reaction: 'Descamación leve = normal. Descamación severa o rojez intensa = reduce a 1 noche/semana 2 semanas más.',
+    startWeek: 9,
+  },
+  {
+    phase: 6, weeks: '11–12', label: 'Endocare Tensage',
+    color: '#34D399', colordim: 'var(--g2)', colorborder: 'rgba(52,211,153,0.25)',
+    products: ['endocare'],
+    names: ['Tensage Radiance Cream (PM, último paso)'],
+    note: 'Último paso de la rutina PM siempre. Sella todo lo anterior. A estas alturas la piel ya tiene tolerancia establecida.',
+    reaction: 'Muy bien tolerado. Si hay granitos (poros obstruidos), puede ser por aplicarlo antes del retinal — respeta el orden.',
+    startWeek: 11,
+  },
+];
+
+function renderProdTable(){
+  const PHASE_LABELS={1:'S1–2',2:'S3–4',3:'S5–6',4:'S7–8',5:'S9–10',6:'S11–12'};
+  const TYPE_MAP={
+    'lrp-clean':  {label:'Limpieza',  color:'var(--sub)'},
+    'cicaplast':  {label:'Barrera',   color:'var(--g)'},
+    'cicalfate':  {label:'Hidrat.',   color:'var(--g)'},
+    'spf':        {label:'☀ SPF',     color:'var(--am)'},
+    'spf-spray':  {label:'☀ SPF+',   color:'var(--am)'},
+    'vitc':       {label:'Antioxid.', color:'#FB923C'},
+    'micelar':    {label:'Limpieza',  color:'var(--sub)'},
+    'lrp-clean2': {label:'Limpieza',  color:'var(--sub)'},
+    'niacin':     {label:'Activo',    color:'var(--pm)'},
+    'endocare':   {label:'Péptidos',  color:'var(--pm)'},
+    'caffeine':   {label:'Activo',    color:'var(--pm)'},
+    'retinal':    {label:'⚠ Retinal', color:'#A78BFA'},
+  };
+  const unlocked=state.unlockedPhase||1;
+  ['am','pm'].forEach(session=>{
+    const el=document.getElementById('prodTable'+session.toUpperCase());
+    if(!el) return;
+    el.innerHTML='';
+    const prods=PRODUCTS.filter(p=>p.session===session).sort((a,b)=>a.phase-b.phase||a.step-b.step);
+    prods.forEach(p=>{
+      const isActive=p.phase<=unlocked;
+      const t=TYPE_MAP[p.id]||{label:'—',color:'var(--sub)'};
+      const row=document.createElement('div');
+      row.style.cssText=`display:grid;grid-template-columns:1fr 80px 70px;padding:9px 14px;border-bottom:1px solid var(--border);align-items:center;${isActive?'':'opacity:0.38;'}`;
+      row.innerHTML=`
+        <div style="display:flex;align-items:center;gap:7px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:${isActive?t.color:'var(--muted)'};flex-shrink:0;"></div>
+          <div>
+            <div style="font-size:12px;font-weight:500;color:${isActive?'var(--text)':'var(--muted)'};">${p.name}</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);">${p.brand}</div>
+          </div>
+        </div>
+        <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:${isActive?'var(--g)':'var(--muted)'};background:${isActive?'var(--g3)':'var(--s3)'};padding:3px 6px;border-radius:6px;">${PHASE_LABELS[p.phase]||'—'}</div>
+        <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:9px;color:${isActive?t.color:'var(--muted)'};padding:3px 6px;border-radius:6px;background:${isActive?'rgba(0,0,0,0.2)':'var(--s3)'};">${isActive?t.label:'🔒'}</div>
+      `;
+      el.appendChild(row);
+    });
+  });
+}
+
+function renderIntro(){
+  const container=document.getElementById('introCards');
+  if(!container) return;
+  container.innerHTML='';
+  renderProdTable();
+  const currentW=getCurrentWeek();
+  const startDate=new Date(state.startDate);
+
+  INTRO_SCHEDULE.forEach(phase=>{
+    const phaseStart=new Date(startDate);
+    phaseStart.setDate(phaseStart.getDate()+(phase.startWeek-1)*7);
+    const phaseEnd=new Date(phaseStart);
+    phaseEnd.setDate(phaseEnd.getDate()+13);
+    const now=new Date();
+
+    const isActive=now>=phaseStart && now<=phaseEnd;
+    const isDone=now>phaseEnd;
+    const isUpcoming=now<phaseStart;
+
+    // Check if all products in this phase are owned
+    const allOwned=phase.products.every(id=>state.owned[id]);
+
+    const card=document.createElement('div');
+    card.style.cssText='margin:0 16px 12px;border-radius:14px;overflow:hidden;border:1px solid '+(isActive?phase.colorborder:isDone?'var(--border)':'var(--border)')+';background:var(--s1);';
+
+    const statusLabel=isDone?'✓ Completada':isActive?'En curso':'Próximamente';
+    const statusColor=isDone?'var(--g)':isActive?phase.color:'var(--muted)';
+
+    card.innerHTML=`
+      <div style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;" onclick="toggleIntroCard('ic${phase.phase}')">
+        <div style="width:36px;height:36px;border-radius:10px;background:${isDone?'var(--g2)':isActive?phase.colordim:'var(--s3)'};border:1px solid ${isDone?'rgba(52,211,153,0.3)':isActive?phase.colorborder:'var(--border)'};display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:${isDone?'var(--g)':isActive?phase.color:'var(--muted)'};flex-shrink:0;">${isDone?'✓':phase.phase}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;">Fase ${phase.phase} · ${phase.label}</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sub);margin-top:2px;">Semanas ${phase.weeks} · ${fmt(phaseStart)} – ${fmt(phaseEnd)}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:${statusColor};padding:2px 8px;border-radius:20px;background:${isDone?'var(--g2)':isActive?phase.colordim:'var(--s3)'};">${statusLabel}</span>
+          <span style="font-size:14px;color:var(--muted);" id="iarr${phase.phase}">›</span>
+        </div>
+      </div>
+      <div id="ic${phase.phase}" style="display:${isActive?'block':'none'};padding:0 16px 16px;">
+        <div style="margin-bottom:10px;">
+          ${phase.products.map((id,i)=>{
+            const owned=!!state.owned[id];
+            return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">
+              <div style="width:20px;height:20px;border-radius:5px;border:1.5px solid ${owned?'var(--g)':'var(--border)'};background:${owned?'var(--g)':'transparent'};display:flex;align-items:center;justify-content:center;font-size:10px;color:#000;flex-shrink:0;">${owned?'✓':''}</div>
+              <span style="font-size:13px;color:${owned?'var(--text)':'var(--sub)'};">${phase.names[i]}</span>
+            </div>`;
+          }).join('')}
+        </div>
+        <div style="font-size:13px;color:var(--sub);line-height:1.6;margin-bottom:10px;padding:10px 12px;background:var(--s2);border-radius:8px;border-left:3px solid ${phase.color};">${phase.note}</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--r);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Si hay reacción</div>
+        <div style="font-size:12px;color:var(--sub);line-height:1.55;padding:9px 12px;background:var(--r2);border-radius:8px;border:1px solid rgba(248,113,113,0.15);margin-bottom:12px;">${phase.reaction}</div>
+        ${phase.phase===(state.unlockedPhase||1)&&getNextPhase(state.unlockedPhase||1)?`
+        <button onclick="unlockNextPhase()" style="width:100%;padding:12px;background:var(--g2);border:1px solid rgba(52,211,153,0.3);border-radius:10px;color:var(--g);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">
+          🔓 Listo — Desbloquear Fase ${(state.unlockedPhase||1)+1}
+        </button>`:''}
+        ${isDone?`<div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--g);text-align:center;padding:8px;">✓ Fase completada</div>`:''}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+
+  // Update home card
+  updateHomeIntroCard(currentW);
+}
+
+function toggleIntroCard(id){
+  const el=document.getElementById(id);
+  const phase=id.replace('ic','');
+  const arr=document.getElementById('iarr'+phase);
+  if(!el) return;
+  const open=el.style.display==='block';
+  el.style.display=open?'none':'block';
+  if(arr) arr.style.transform=open?'':'rotate(90deg)';
+}
+
+function updateHomeIntroCard(currentW){
+  const next=INTRO_SCHEDULE.find(p=>p.startWeek<=currentW&&p.startWeek+1>=currentW)||
+             INTRO_SCHEDULE.find(p=>p.startWeek>currentW);
+  const el=document.getElementById('homeNextProduct');
+  const el2=document.getElementById('homeNextDate');
+  if(!el||!next) return;
+  const startDate=new Date(state.startDate);
+  const phaseStart=new Date(startDate);
+  phaseStart.setDate(phaseStart.getDate()+(next.startWeek-1)*7);
+  const isNow=currentW>=next.startWeek&&currentW<next.startWeek+2;
+  el.textContent=(isNow?'Ahora: ':'Siguiente: ')+next.label;
+  el.style.color=next.color;
+  el2.textContent='Fase '+next.phase+' · Semanas '+next.weeks+' · '+fmt(phaseStart)+' →';
+}
+
+// ═══════════════════════════════════════════════
+// FOTOS
+// ═══════════════════════════════════════════════
+function renderFotos(){
+  const container=document.getElementById('photoEntries');
+  const compareSection=document.getElementById('compareSection');
+  container.innerHTML='';
+  compareSection.innerHTML='';
+
+  if(state.photos.length>=2){
+    const btn=document.createElement('button');
+    btn.className='compare-btn';
+    btn.innerHTML='◈ Comparar primera vs última foto';
+    btn.onclick=showCompare;
+    compareSection.appendChild(btn);
+  }
+
+  if(!state.photos.length){
+    container.innerHTML='<div class="empty-state">Sin fotos aún.<br>Sube tu primera foto de referencia.</div>';
+    return;
+  }
+
+  [...state.photos].reverse().forEach((entry,i)=>{
+    const el=document.createElement('div');
+    el.className='photo-entry';
+    let imgsHtml='';
+    if(entry.imgs.length===1){
+      imgsHtml=`<img class="pe-img" src="${entry.imgs[0]}" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:0;">`;
+    } else {
+      imgsHtml=`<div class="${entry.imgs.length<=3?'pe-imgs':'pe-compare'}">
+        ${entry.imgs.map(img=>`<img class="${entry.imgs.length<=3?'pe-img':'pe-compare'}" src="${img}" style="${entry.imgs.length>3?'aspect-ratio:3/4;object-fit:cover;border-radius:8px;width:100%':''}">`).join('')}
+      </div>`;
+    }
+
+    el.innerHTML=`
+      <div class="pe-header">
+        <span class="pe-week">Semana ${entry.week}</span>
+        <span class="pe-date">${entry.date}</span>
+      </div>
+      ${imgsHtml}
+      <div class="pe-report">
+        <div class="pe-report-title">Análisis de evolución</div>
+        <div id="report_${entry.id}">${entry.report?
+          `<div class="pe-report-text">${entry.report}</div>`:
+          `<div class="ai-analyzing"><div class="spinner"></div>Analizando evolución...</div>`
+        }</div>
+        ${!entry.report?`<button onclick="analyzePhoto('${entry.id}')" style="margin-top:10px;padding:8px 14px;background:var(--pm2);border:1px solid rgba(129,140,248,0.3);border-radius:8px;color:var(--pm);font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;">→ Generar análisis IA</button>`:''}
+      </div>
+    `;
+    container.appendChild(el);
+  });
+}
+
+function showCompare(){
+  if(state.photos.length<2) return;
+  const first=state.photos[0];
+  const last=state.photos[state.photos.length-1];
+  const compareSection=document.getElementById('compareSection');
+
+  const div=document.createElement('div');
+  div.className='compare-view';
+  div.innerHTML=`
+    <div class="compare-title">Comparativa Evolución</div>
+    <div class="compare-grid">
+      <div class="compare-slot">${first.imgs[0]?`<img src="${first.imgs[0]}">`:'Sin foto'}</div>
+      <div class="compare-slot">${last.imgs[0]?`<img src="${last.imgs[0]}">`:'Sin foto'}</div>
+    </div>
+    <div class="compare-labels">
+      <div class="c-label">Semana ${first.week}<br>${first.date}</div>
+      <div class="c-label">Semana ${last.week}<br>${last.date}</div>
+    </div>
+    <button onclick="document.getElementById('compareSection').innerHTML='<button class=\\'compare-btn\\' onclick=\\'showCompare()\\'>◈ Comparar primera vs última foto</button>'" style="width:100%;padding:10px;background:var(--s3);border:1px solid var(--border);border-radius:8px;color:var(--sub);font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;">Cerrar comparativa</button>
+  `;
+  const cs=document.getElementById('compareSection');
+  cs.innerHTML='';
+  cs.appendChild(div);
+}
+
+// File upload
+document.getElementById('fileInput').addEventListener('change', async function(e){
+  const files=Array.from(e.target.files);
+  if(!files.length) return;
+  const imgs=[];
+  for(const f of files){
+    const b64=await toBase64(f);
+    imgs.push(b64);
+  }
+  const entry={
+    id: Date.now().toString(),
+    week: getCurrentWeek(),
+    date: new Date().toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'}),
+    imgs,
+    report:null,
+  };
+  state.photos.push(entry);
+  saveState();
+  toast('✓ '+files.length+' foto(s) añadidas — Semana '+entry.week);
+  renderFotos();
+  this.value='';
+  // auto-analyze
+  setTimeout(()=>analyzePhoto(entry.id), 500);
+});
+
+function toBase64(file){
+  return new Promise(res=>{
+    const r=new FileReader();
+    r.onload=e=>res(e.target.result);
+    r.readAsDataURL(file);
+  });
+}
+
+async function analyzePhoto(id){
+  const entry=state.photos.find(p=>p.id===id);
+  if(!entry||entry.report) return;
+
+  const reportEl=document.getElementById('report_'+id);
+  if(reportEl) reportEl.innerHTML='<div class="ai-analyzing"><div class="spinner"></div>Analizando con IA...</div>';
+
+  const weekNum=entry.week;
+  const streak=calcStreak();
+  const prompt=`Eres un dermatólogo especialista en estética masculina. Analiza brevemente la evolución de la piel de este paciente masculino de 39 años, Madrid. Lleva ${weekNum} semana(s) de protocolo skincare, con ${streak} días de racha.
+
+Diagnóstico base: rosácea eritematotelangiectásica leve-moderada, barrera cutánea comprometida, arrugas dinámicas en frente, flacidez incipiente mandibular.
+
+Protocolo actual (semana ${weekNum}): limpiador suave, Cicaplast B5, Niacinamida 10%, SPF 50+${weekNum>=4?', Crystal Retinal 1':''}.
+
+Proporciona un análisis clínico breve y directo (3-4 frases) sobre:
+1. Lo que observas en la foto en términos de piel
+2. Si hay mejora esperada/observable para esta semana del protocolo
+3. Qué vigilar la próxima semana
+
+Tono: clínico, directo, sin rodeos. En español.`;
+
+  try {
+    const messages=[{role:'user',content:[]}];
+    // Add images if present
+    entry.imgs.slice(0,3).forEach(img=>{
+      const mediaType=img.startsWith('data:image/png')?'image/png':'image/jpeg';
+      const b64=img.split(',')[1];
+      messages[0].content.push({type:'image',source:{type:'base64',media_type:mediaType,data:b64}});
+    });
+    messages[0].content.push({type:'text',text:prompt});
+
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages,
+      })
+    });
+    const data=await res.json();
+    const text=data.content?.find(c=>c.type==='text')?.text||'No se pudo generar análisis.';
+    entry.report=text;
+    saveState();
+    if(reportEl) reportEl.innerHTML=`<div class="pe-report-text">${text.replace(/\n/g,'<br>')}</div>`;
+  } catch(err) {
+    if(reportEl) reportEl.innerHTML=`<div class="pe-report-text" style="color:var(--sub)">Análisis no disponible. Inténtalo de nuevo.</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════════
+function openModal(html){
+  document.getElementById('modal-content').innerHTML=html;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal(e){
+  if(!e||e.target===document.getElementById('modal-overlay')){
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+// Set start date if not set
+if(!state.startDate) state.startDate=today();
+
+renderHome();
+</script>
+</body>
+</html>
